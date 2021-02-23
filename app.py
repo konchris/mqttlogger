@@ -53,23 +53,23 @@ def on_connect(client, userdata, flags, rc):
 # The callback for when a PUBLISH message is received from the ESP8266.
 def on_message(client, userdata, message):
     if 1:
-        # print("Sensor Reading Update")
-        # print("\t", message.topic)
-        # print(message.payload.json())
-        # print(dhtreadings_json['temperature'])
-        # print(dhtreadings_json['humidity'])
 
-        # dhtreadings_json = json.loads(message.payload)
+        if message.payload == b'true':
+            message_payload = True
+        elif message.payload == b'false':
+            message_payload = False
+        else:
+            message_payload = message.payload
 
         # connects to SQLite database. File is named "sensordata.db" without the quotes
         # WARNING: your database file should be in the same directory of the app.py file or have the correct path
         conn=sqlite3.connect('sensorreadings.db')
         c=conn.cursor()
 
-        c.execute("""INSERT INTO sensorreadings (currentdate,
-            currenttime, device, reading) VALUES(date('now'),
-            time('now'), (?), (?))""", (message.topic,
-            float(message.payload)) )
+        c.execute("""INSERT INTO sensorreadings (currentdate, currenttime, device, reading)
+                     VALUES(date('now'), time('now'), (?), (?))
+                     """,
+                  (message.topic, float(message_payload)))
 
         conn.commit()
         conn.close()
