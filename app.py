@@ -11,7 +11,15 @@ import logging
 import paho.mqtt.client as mqtt
 from flask import Flask, render_template
 import sqlite3
+import logging
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+
+LOG = logging.getLogger("app")
 
 app = Flask(__name__)
 
@@ -20,7 +28,7 @@ def parse_agruments(args):
     """The argument parser
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('--debug', help='set logging trace level to debug', action='store_true')
+    parser.add_argument("-d", "--debug", help="set logging trace level to DEBUG", action="store_true")
     return parser.parse_args(args)
 
 
@@ -33,7 +41,7 @@ def dict_factory(cursor, row):
 
 
 def on_connect(client, userdata, flags, rc):
-    print("Connected with result code " + str(rc))
+    logging.info("Connected with result code " + str(rc))
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
     client.subscribe("test_home_readings")
