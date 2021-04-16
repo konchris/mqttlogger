@@ -1,35 +1,50 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""Module/Script docstring
+#!/bin/python3
+#
+# Created by Rui Santos
+# Complete project details: http://randomnerdtutorials.com
+#
 
-"""
+__author__ = "Christopher Espy"
 
-__author__ = 'Christopher Espy'
-
-import argparse
+# Built-In Libraries
 import logging
+from datetime import datetime
+
+# Third-party libraries
 import paho.mqtt.client as mqtt
 from flask import Flask, render_template
-import sqlite3
-import logging
+from flask_sqlalchemy import SQLAlchemy
 
+# Local libraries
+# from mqttlogger.data_model import SensorReading
+
+# Create logging
 logging.basicConfig(
+    filename="mqttlogger.log",
+    filemode="a",
     level=logging.INFO,
     format="%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)s | %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
+
 )
 
-LOG = logging.getLogger("app")
+LOG = logging.getLogger("mqttlogger")
 
 app = Flask(__name__)
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+mysqldb://mqttlogger:REDACTED_DB_PASS@192.168.1.14:3306/sensorreadings"
+db = SQLAlchemy(app)
 
 
-def parse_agruments(args):
-    """The argument parser
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--debug", help="set logging trace level to DEBUG", action="store_true")
-    return parser.parse_args(args)
+class SensorReading(db.Model):
+    __tablename__ = "sensorreadings"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    currentdate = db.Column(db.Date)
+    currenttime = db.Column(db.Time)
+    device = db.Column(db.Text)
+    reading = db.Column(db.Float)
+
+    def __repr__(self):
+        return f"Reading: {self.currentdate}:{self.currenttime} - {self.device} - {self.reading}"
 
 
 def dict_factory(cursor, row):
@@ -37,11 +52,11 @@ def dict_factory(cursor, row):
     for idx, col in enumerate(cursor.description):
         d[col[0]] = row[idx]
     return d
+
+
 # The callback for when the client receives a CONNACK response from the server.
-
-
 def on_connect(client, userdata, flags, rc):
-    logging.info("Connected with result code " + str(rc))
+    LOG.debug("Connected with result code %s" % str(rc))
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
     client.subscribe("test_home_readings")
@@ -56,10 +71,13 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("hum_patio")
     client.subscribe("temperature_office")
     client.subscribe("humidity_office")
+    client.subscribe("temperature/bedroom")
+    client.subscribe("humidity/bedroom")
 
 
 # The callback for when a PUBLISH message is received from the ESP8266.
 def on_message(client, userdata, message):
+    LOG.debug("Received message for topic:\n\t%s" % message.topic)
     if 1:
 
         if message.payload == b'true':
@@ -69,51 +87,28 @@ def on_message(client, userdata, message):
         else:
             message_payload = message.payload
 
-        # connects to SQLite database. File is named "sensordata.db" without the quotes
-        # WARNING: your database file should be in the same directory of the app.py file or have the correct path
-        conn=sqlite3.connect('sensorreadings.db')
-        c=conn.cursor()
-
-        c.execute("""INSERT INTO sensorreadings (currentdate, currenttime, device, reading)
-                     VALUES(date('now'), time('now'), (?), (?))
-                     """,
-                  (message.topic, float(message_payload)))
-
-        conn.commit()
-        conn.close()
+        new_reading = SensorReading(currentdate=datetime.now().strftime("%Y-%m-%d"),
+                                    currenttime=datetime.now().strftime("%H:%M:%S"),
+                                    device=message.topic,
+                                    reading=float(message_payload))
+        db.session.add(new_reading)
+        LOG.debug(f"Adding new record to DB:\n\t{new_reading}")
+        db.session.commit()
 
 
-mqttc=mqtt.Client()
+mqttc = mqtt.Client()
 mqttc.on_connect = on_connect
 mqttc.on_message = on_message
-mqttc.connect("localhost",1883,60)
+mqttc.connect("localhost", 1883, 60)
 mqttc.loop_start()
 
 
 @app.route("/")
-def main(argv=None):
-    """The main function"""
-    arguments = parse_agruments(argv)
-
-    if arguments.debug:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.INFO)
-
-    # connects to SQLite database. File is named "sensordata.db" without the quotes
-    # WARNING: your database file should be in the same directory of the app.py file or have the correct path
-    conn = sqlite3.connect('sensorreadings.db')
-    conn.row_factory = dict_factory
-    c = conn.cursor()
-    c.execute("SELECT * FROM sensorreadings ORDER BY id DESC LIMIT 20")
-    readings = c.fetchall()
-    # print(readings)
+def main():
+    db.create_all()
+    readings = SensorReading.query.order_by(SensorReading.id.desc()).limit(100)
     return render_template('main.html', readings=readings)
 
 
-if __name__ == '__main__':
-    import sys
-
+if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8181, debug=True)
-
-    sys.exit(main(sys.argv[1:]))
