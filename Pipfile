@@ -5,9 +5,8 @@ name = "pypi"
 
 [packages]
 paho-mqtt = "*"
-flask = "*"
-flask-sqlalchemy = "*"
 mysqlclient = "*"
+sqlalchemy = "*"
 
 [dev-packages]
 pytest = "*"

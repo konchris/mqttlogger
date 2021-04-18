@@ -6,22 +6,18 @@
 
 __author__ = 'Christopher Espy'
 
-# from flask import Flask
-# from flask_sqlalchemy import SQLAlchemy
-#
-# app = Flask(__name__)
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+mysqldb://mqttlogger:REDACTED_DB_PASS@192.168.1.14:3306/sensorreadings"
-# # app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:////Users/chris/Programming/MQTTLogger/data/sensorreadings.db"
-# db = SQLAlchemy(app)
+from sqlalchemy import Column, Integer, Date, Time, Text, Float
+
+from mqttlogger.base import Base
 
 
-class SensorReading(db.Model):
+class SensorReading(Base):
     __tablename__ = "sensorreadings"
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    currentdate = db.Column(db.Date)
-    currenttime = db.Column(db.Time)
-    device = db.Column(db.Text)
-    reading = db.Column(db.Float)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    currentdate = Column(Date)
+    currenttime = Column(Time)
+    device = Column(Text)
+    reading = Column(Float)
 
     def __repr__(self):
-        return f"Reading: {self.currentdate}:{self.currenttime} - {self.device} - {self.reading}"
+        return f"<Reading: {self.currentdate}T{self.currenttime} - {self.device} - {self.reading}>"
