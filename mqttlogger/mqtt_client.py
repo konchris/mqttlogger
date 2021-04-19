@@ -8,17 +8,13 @@ __author__ = 'Christopher Espy'
 
 import logging
 from datetime import datetime
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
 from mqttlogger.data_model import SensorReading
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)s | %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
-)
-
-LOG = logging.getLogger("mqtt_client_logger")
+module_logger = logging.getLogger("mqttlogger.mqtt_client")
 
 
 def on_connect(client, userdata, flags, rc):
@@ -53,11 +49,11 @@ def on_connect(client, userdata, flags, rc):
         the connection result
 
     """
-    LOG.debug("Connected with result code %s" % str(rc))
+    module_logger.debug("Connected with result code %s" % str(rc))
     topics = ["environment/#"]
     for topic in topics:
         client.subscribe(topic)
-        LOG.debug("Successfully subscribed to topic %s" % topic)
+        module_logger.info("Successfully subscribed to topic %s" % topic)
 
 
 def on_message(client, userdata, message):
@@ -73,9 +69,9 @@ def on_message(client, userdata, message):
         an instance of MQTT Message. This is a class with members topic, payload, qos, retain
 
     """
-    LOG.debug("Received message for topic:\n\t%s" % message.topic)
+    module_logger.debug("Received message for topic: %s" % message.topic)
 
-    LOG.debug("Message payload:\n\t\t%s" % message.payload)
+    module_logger.debug("Message payload: %s" % message.payload)
 
     # Convert the payload
     if message.payload == b'true':
@@ -85,7 +81,7 @@ def on_message(client, userdata, message):
     else:
         message_payload = float(message.payload)
 
-    LOG.debug("The converted message payload is:\n\t\t%s" % message_payload)
+    module_logger.debug("The converted message payload is: %s" % message_payload)
     #
     new_reading = SensorReading(currentdate=datetime.now().strftime("%Y-%m-%d"),
                                 currenttime=datetime.now().strftime("%H:%M:%S"),
@@ -103,7 +99,7 @@ def insert(sensor_reading):
         The SQLAlchemy data model for the sensor reading
 
     """
-    LOG.debug(f"Adding new record to DB:\n\t{sensor_reading}")
+    module_logger.debug(f"Adding new record to DB: {sensor_reading}")
     engine = create_engine("mysql+mysqldb://mqttlogger:REDACTED_DB_PASS@192.168.1.14:3306/sensorreadings")
     Session = sessionmaker()
     Session.configure(bind=engine)
