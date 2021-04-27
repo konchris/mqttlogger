@@ -89,6 +89,8 @@ def on_message(client, userdata, message):
                                 reading=float(message_payload))
     client.insert(new_reading)
 
+    print(new_reading)
+
 
 def insert(sensor_reading):
     """Insert the new sensor reading into the database
