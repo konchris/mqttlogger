@@ -12,7 +12,9 @@ from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from constants import ROOT_DIR
 from mqttlogger.data_model import SensorReading
+from mqttlogger.db_connection import create_connection_string
 
 module_logger = logging.getLogger("mqttlogger.mqtt_client")
 
@@ -89,8 +91,6 @@ def on_message(client, userdata, message):
                                 reading=float(message_payload))
     client.insert(new_reading)
 
-    print(new_reading)
-
 
 def insert(sensor_reading):
     """Insert the new sensor reading into the database
@@ -102,9 +102,18 @@ def insert(sensor_reading):
 
     """
     module_logger.debug(f"Adding new record to DB: {sensor_reading}")
-    engine = create_engine("mysql+mysqldb://mqttlogger:REDACTED_DB_PASS@192.168.1.14:3306/sensorreadings")
+
+    db_conn_str = create_connection_string(ROOT_DIR / "config.json")
+
+    engine = create_engine(db_conn_str)
+    module_logger.debug(f"Successfully created engine: {engine.url}")
+
     Session = sessionmaker()
     Session.configure(bind=engine)
+
     session = Session()
+
+    module_logger.debug("Adding sensor reading")
     session.add(sensor_reading)
     session.commit()
+    module_logger.debug("Successfully commited to the db.")

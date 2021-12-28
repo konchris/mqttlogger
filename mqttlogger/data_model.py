@@ -6,9 +6,17 @@
 
 __author__ = 'Christopher Espy'
 
-from sqlalchemy import Column, Integer, Date, Time, Text, Float
+import logging
 
-from mqttlogger.base import Base
+from sqlalchemy import Column, Integer, Date, Time, Text, Float, create_engine
+from sqlalchemy.ext.declarative import declarative_base
+
+from constants import ROOT_DIR
+from mqttlogger.db_connection import create_connection_string
+
+module_logger = logging.getLogger("mqttlogger.data_model")
+
+Base = declarative_base()
 
 
 class SensorReading(Base):
@@ -21,3 +29,23 @@ class SensorReading(Base):
 
     def __repr__(self):
         return f"<Reading: {self.currentdate}T{self.currenttime} - {self.device} - {self.reading}>"
+
+
+def create():
+    """
+
+    Returns
+    -------
+
+    """
+
+    db_conn_str = create_connection_string(ROOT_DIR / "config.json")
+
+    engine = create_engine(db_conn_str)
+    module_logger.debug(f"Successfully created engine: {engine.url}")
+    Base.metadata.create_all(engine)
+    module_logger.debug(f"Created all tables.")
+
+
+if __name__ == "__main__":
+    create()

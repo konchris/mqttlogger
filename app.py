@@ -7,26 +7,25 @@ __author__ = "Christopher Espy"
 import argparse
 import logging
 import logging.handlers
-import os
 
 # Third-party libraries
 import paho.mqtt.client as mqtt
 
 # Local libraries
+from constants import ROOT_DIR
+from mqttlogger.db_connection import load_config_file
 from mqttlogger.mqtt_client import on_connect, on_message, insert
-
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Create Logger
 logger = logging.getLogger("mqttlogger")
 logger.setLevel(logging.INFO)
 
 # file handler
-LOG_FOLDER = os.path.join(ROOT_DIR, "logs")
-LOG_FILENAME = os.path.join(LOG_FOLDER, "mqttlogger.log")
+LOG_FOLDER = ROOT_DIR / "logs"
+LOG_FILENAME = LOG_FOLDER / "mqttlogger.log"
 
-if not os.path.exists(LOG_FOLDER):
-    os.mkdir(os.path.dirname(LOG_FILENAME))
+if not LOG_FOLDER.exists():
+    LOG_FOLDER.mkdir()
 
 fh = logging.handlers.RotatingFileHandler(LOG_FILENAME, maxBytes=2000000, backupCount=5)
 
@@ -68,7 +67,10 @@ def main(argv=None):
     mqttc.on_connect = on_connect
     mqttc.on_message = on_message
     mqttc.insert = insert
-    mqttc.connect("localhost", 1883, 60)
+
+    config = load_config_file(ROOT_DIR / "config.json")
+
+    mqttc.connect(config["mqtt_server_ip"], config["mqtt_server_port"], 60)
     logger.debug("Client created")
     mqttc.loop_forever()
 
