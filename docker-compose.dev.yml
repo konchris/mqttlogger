@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  mqtt:
+    image: eclipse-mosquitto
+    ports:
+      - 1883:1883
+      - 9001:9001
+    volumes:
+      - ./mosquitto:/mosquitto
+    networks:
+      - mqtt_net
+
+  mqtt_logger:
+    build:
+      context: .
+    volumes:
+      - ./:/code
+    depends_on:
+      - mqtt
+      - mariadb
+    networks:
+      - mqtt_net
+      - mqtt_db
+
+  mariadb:
+    image: lscr.io/linuxserver/mariadb
+    ports:
+      - 3306:3306
+    volumes:
+      - ./config:/config
+      - ./dump/:/docker-entrypoint-initdb.d
+    networks:
+      - mqtt_db
+    environment:
+      - PUID=501
+      - PGID=501
+      - TZ=Europe/Berlin
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+
+networks:
+  mqtt_net:
+  mqtt_db:
