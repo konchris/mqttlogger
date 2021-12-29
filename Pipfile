@@ -11,8 +11,6 @@ sqlalchemy = "*"
 [dev-packages]
 pytest = "*"
 pytest-mock = "*"
-jupyter = "*"
-seaborn = "*"
 
 [requires]
 python_version = "3.7"

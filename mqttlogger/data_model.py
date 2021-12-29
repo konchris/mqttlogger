@@ -8,7 +8,7 @@ __author__ = 'Christopher Espy'
 
 import logging
 
-from sqlalchemy import Column, Integer, Date, Time, Text, Float, create_engine
+from sqlalchemy import Column, Integer, Date, Time, Text, Float, create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 
 from constants import ROOT_DIR
@@ -43,7 +43,8 @@ def create():
 
     engine = create_engine(db_conn_str)
     module_logger.debug(f"Successfully created engine: {engine.url}")
-    Base.metadata.create_all(engine)
+    metadata = MetaData(engine)
+    metadata.create_all(engine)
     module_logger.debug(f"Created all tables.")
 
 
