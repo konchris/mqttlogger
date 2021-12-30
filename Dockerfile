@@ -7,7 +7,7 @@ FROM python:3.7-slim
 RUN mkdir /code
 WORKDIR /code
 
-COPY Pipfile* .
+COPY Pipfile .
 
 RUN pip install --upgrade pip && \
     pip install pipenv && \
