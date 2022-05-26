@@ -10,6 +10,7 @@ services:
       - ./mosquitto:/mosquitto
     networks:
       - mqtt_net
+    restart: always
 
   mqtt_logger:
     build:
@@ -22,6 +23,7 @@ services:
     networks:
       - mqtt_net
       - mqtt_db
+    restart: always
 
   mariadb:
     image: lscr.io/linuxserver/mariadb
@@ -40,6 +42,7 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    restart: always
 
 networks:
   mqtt_net:
