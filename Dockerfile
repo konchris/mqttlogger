@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM python:3.7-slim
+FROM python:3.10-slim
 
 
 # By copying over requirements first, we make sure that Docker will cache
@@ -7,17 +7,29 @@ FROM python:3.7-slim
 RUN mkdir /code
 WORKDIR /code
 
-COPY Pipfile .
+COPY requirements.txt .
+
+#COPY Pipfile .
+#
+#RUN pip install --upgrade pip && \
+#    pip install pipenv && \
+#    apt-get update && \
+#    apt-get upgrade -y && \
+#    apt-get install -y --no-install-recommends libmariadb-dev python3-dev build-essential && \
+#    pipenv lock && \
+#    pipenv install --system --deploy && \
+#    pip uninstall -y pipenv && \
+#    apt-get purge -y python3-dev build-essential && \
+#    apt-get autoremove -y && \
+#    apt-get clean && \
+#    rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip && \
-    pip install pipenv && \
     apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends libmariadb-dev python3-dev build-essential && \
-    pipenv lock --dev && \
-    pipenv install --system --deploy && \
-    pip uninstall -y pipenv && \
-    apt-get purge -y python3-dev build-essential && \
+    apt-get install -y --no-install-recommends libmariadb-dev python3-dev build-essential
+RUN pip install -r requirements.txt
+RUN apt-get purge -y python3-dev build-essential && \
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -25,7 +37,7 @@ RUN pip install --upgrade pip && \
 COPY app.py .
 COPY config.json .
 COPY mqttlogger .
-COPY tests .
+
 
 # Now copy in our code, and run it
 CMD ["python", "app.py"]
