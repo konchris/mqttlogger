@@ -1,43 +1,40 @@
 # syntax=docker/dockerfile:1
 FROM python:3.10-slim
 
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV DEBIAN_FRONTEND=noninteractive
 
-# By copying over requirements first, we make sure that Docker will cache
-# our installed requirements rather than reinstall them on every build
+# Create and set working directory
 RUN mkdir /code
 WORKDIR /code
 
+# Copy requirements first for better caching
 COPY requirements.txt .
 
-#COPY Pipfile .
-#
-#RUN pip install --upgrade pip && \
-#    pip install pipenv && \
-#    apt-get update && \
-#    apt-get upgrade -y && \
-#    apt-get install -y --no-install-recommends libmariadb-dev python3-dev build-essential && \
-#    pipenv lock && \
-#    pipenv install --system --deploy && \
-#    pip uninstall -y pipenv && \
-#    apt-get purge -y python3-dev build-essential && \
-#    apt-get autoremove -y && \
-#    apt-get clean && \
-#    rm -rf /var/lib/apt/lists/*
-
-RUN pip install --upgrade pip && \
+# Install dependencies in a single RUN command to reduce layers
+RUN pip install --no-cache-dir --upgrade pip && \
     apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends libmariadb-dev python3-dev build-essential
-RUN pip install -r requirements.txt
-RUN apt-get purge -y python3-dev build-essential && \
+    apt-get install -y --no-install-recommends \
+    	libmariadb-dev \
+	python3-dev \
+	build-essential && \
+    pip install --no-cache-dir -r requirements.txt && \
+    # Clean up to reduce image size
+    apt-get purge -y python3-dev build-essential && \
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY app.py .
-COPY config.json .
-COPY mqttlogger .
+# Copy application code
+COPY app.py config.json ./
+COPY mqttlogger ./mqttlogger
 
+# Create a non-root user to run the application
+RUN useradd -m appuser
+USER appuser
 
-# Now copy in our code, and run it
+# Run the application
 CMD ["python", "app.py"]
