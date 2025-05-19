@@ -1,18 +1,20 @@
-version: '3.7'
+version: '3.9'
 
 services:
   mqtt:
-    image: eclipse-mosquitto
+    image: eclipse-mosquitto:latest
+    container_name: mqtt
     ports:
-      - 1883:1883
-      - 9001:9001
+      - "1883":"1883"
+      - "9001":"9001"
     volumes:
       - ./mosquitto:/mosquitto
     networks:
       - mqtt_net
-    restart: always
+    restart: unless-stopped
 
   mqtt_logger:
+    container_name: mqtt_logger
     build:
       context: .
     volumes:
@@ -23,12 +25,12 @@ services:
     networks:
       - mqtt_net
       - mqtt_db
-    restart: always
+    restart: unless-stopped
 
   mariadb:
-    image: lscr.io/linuxserver/mariadb
+    image: lscr.io/linuxserver/mariadb:latest
     ports:
-      - 3306:3306
+      - "3306":"3306"
     volumes:
       - ./config:/config
       - ./dump/:/docker-entrypoint-initdb.d
@@ -42,8 +44,15 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-    restart: always
+    restart: unless-stopped
+    healthcheck:  # Add healthcheck for improved reliability
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   mqtt_net:
+    name: mqtt_net
   mqtt_db:
+    name: mqtt_db
