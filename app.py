@@ -7,6 +7,8 @@ __author__ = "Christopher Espy"
 import argparse
 import logging
 import logging.handlers
+import signal
+import sys
 
 # Third-party libraries
 import paho.mqtt.client as mqtt
@@ -72,8 +74,18 @@ def main(argv=None):
 
     mqttc.connect(config["mqtt_server_ip"], config["mqtt_server_port"], 60)
     logger.debug("Client created")
-    mqttc.loop_forever()
 
+    # Handle SIGTERM gracefully
+    def handle_sigterm(signum, frame):
+        logger.info("Received SIGTERM, disconnecting MQTT client...")
+        mqttc.loop_stop()
+        mqttc.disconnect()
+        sys.exti(0)
+
+    signal.signal(signal.SIGTERM, handle_sigterm)
+
+    logger.debug("Starting MQTT loop_forever")
+    mqttc.loop_forever()
     return 0
 
 
