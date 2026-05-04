@@ -80,7 +80,7 @@ def main(argv=None):
         logger.info("Received SIGTERM, disconnecting MQTT client...")
         mqttc.loop_stop()
         mqttc.disconnect()
-        sys.exti(0)
+        sys.exit(0)
 
     signal.signal(signal.SIGTERM, handle_sigterm)
 

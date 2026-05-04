@@ -147,9 +147,17 @@ connects and begins storing readings successfully.
 
 ### Edge Cases
 
-- What happens when a message payload cannot be parsed as a number or boolean? (malformed payload)
-- What happens if the database is unavailable when a message arrives?
-- How does the service behave if the configuration file is missing or malformed on startup?
+- **Malformed payload**: If a message payload cannot be parsed as a number or boolean, the system
+  MUST log an error entry containing the raw payload and device address, discard the message, and
+  continue running without interruption.
+- **Database write failure**: If a storage write fails for any reason (database unavailable,
+  connection error, etc.), the system MUST log an error entry with the failed record's device
+  address, value, and failure cause, discard the message, and continue processing subsequent
+  messages without interruption. Data loss during database outages is accepted.
+- **Missing or malformed configuration**: If the configuration file is absent or cannot be
+  parsed at startup, the service MUST exit immediately with a clear, human-readable error
+  message identifying the problem. No attempt is made to start with default values or to
+  retry reading the file.
 - What happens if the broker sends a retained message flood on (re)connect?
 - What happens if disk space is exhausted and a new log file cannot be created?
 
@@ -175,7 +183,8 @@ connects and begins storing readings successfully.
   status.
 - **FR-008**: The system MUST read all connection parameters (broker address and port, database
   host, port, name, and credentials) from an external configuration source; none of these values
-  may be hard-coded in the application.
+  may be hard-coded in the application. Broker connections are anonymous; no broker credentials
+  are required or stored in configuration.
 - **FR-009**: The system MUST run as a non-privileged (non-root) operating system user.
 - **FR-010**: The system MUST be deployable alongside its broker and database dependencies via
   a single container orchestration command.
@@ -183,6 +192,20 @@ connects and begins storing readings successfully.
   without modifying application code or rebuilding the service.
 - **FR-012**: The database MUST be considered ready before the logging service attempts its
   first connection, to prevent startup failures due to initialization race conditions.
+- **FR-013**: When a message payload cannot be parsed as a numeric or boolean value, the system
+  MUST log an error entry containing the raw payload and device address, discard the message,
+  and continue processing subsequent messages without interruption.
+- **FR-014**: When a storage write fails for any reason, the system MUST log an error entry
+  containing the device address, value, and failure cause, discard the message, and continue
+  processing subsequent messages. The service MUST NOT exit due to a storage write failure.
+- **FR-015**: When the broker connection drops during normal operation, the service MUST attempt
+  to reconnect indefinitely without operator intervention. The service MUST NOT exit due to a
+  broker connection loss; reconnection attempts continue until the broker is available again or
+  the service receives a stop signal.
+- **FR-016**: If the configuration file is missing or cannot be parsed at startup, the service
+  MUST exit immediately with a non-zero status code and a human-readable error message
+  identifying the specific problem. The service MUST NOT start with default values or retry
+  reading the configuration.
 
 ### Key Entities
 
@@ -218,6 +241,16 @@ connects and begins storing readings successfully.
 - **SC-007**: Log files never consume more than a fixed, bounded amount of disk space regardless
   of how long the service has been running.
 
+## Clarifications
+
+### Session 2026-05-04
+
+- Q: What should the system do when it receives a message with a malformed payload (neither a float nor a boolean string)? → A: Log the error with the raw payload and device address, discard the message, and continue running.
+- Q: What should the system do when a database write fails (e.g., database temporarily unavailable)? → A: Log the error with the failed record details, discard the message, and continue running (best effort; data loss during outages is accepted).
+- Q: What reconnection strategy should the service use when the broker connection drops? → A: Retry indefinitely using the broker client's built-in reconnect loop; never give up or exit due to broker unavailability alone.
+- Q: What MQTT broker authentication model does the service use? → A: Anonymous connections only — no broker credentials are required or supported (private home network assumption).
+- Q: How should the service behave if the configuration file is missing or malformed on startup? → A: Exit immediately with a clear, human-readable error message identifying the problem; do not attempt to start with defaults or retry.
+
 ## Assumptions
 
 - Sensor devices (publishers) are out of scope; they are independently operated and publish to
@@ -235,4 +268,5 @@ connects and begins storing readings successfully.
 - Network connectivity between broker, logger, and database is reliable within the local network;
   wide-area network reliability is not a design requirement.
 - The service operates within a private home network; no public-facing security hardening beyond
-  non-root execution is required for v1.
+  non-root execution is required for v1. The broker accepts anonymous connections; no MQTT
+  credentials are needed or supported.
