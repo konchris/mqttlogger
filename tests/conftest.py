@@ -1,5 +1,19 @@
 # -*- coding: utf-8 -*-
+#
+# Integration test configuration
+#
+# MQTT broker: controlled by the MQTT_TEST_SERVER environment variable (default: localhost).
+#   - Offline / local: start a broker with `mosquitto -c /tmp/mosquitto-test.conf -d`
+#     where mosquitto-test.conf contains `listener 1883` and `allow_anonymous true`.
+#   - Internet-connected: set MQTT_TEST_SERVER=test.mosquitto.org
+#
+# Database: no test-DB fixture is defined. Tests that call insert() directly require
+#   a running MariaDB. The current integration tests mock insert() on the client, so
+#   no database is needed to run test_mqtt_client.py.
+#
+# Skipping offline: run with `-m "not integration"` to skip all integration tests.
 
+import os
 import pytest
 from paho.mqtt import client
 import random
@@ -10,11 +24,11 @@ from mqttlogger.mqtt_client import on_connect, on_message, insert
 
 @pytest.fixture()
 def test_mqtt_server():
-    """For integration testing use an already running mosquitto server
+    """MQTT broker used for integration tests.
 
-    This of course assumes one has internet access and this address is not blocked.
+    Defaults to localhost. Set MQTT_TEST_SERVER=test.mosquitto.org for internet runs.
     """
-    yield "test.mosquitto.org"
+    yield os.environ.get("MQTT_TEST_SERVER", "localhost")
 
 
 @pytest.fixture()

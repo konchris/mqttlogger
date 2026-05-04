@@ -29,6 +29,8 @@ LOG_FILENAME = LOG_FOLDER / "mqttlogger.log"
 if not LOG_FOLDER.exists():
     LOG_FOLDER.mkdir()
 
+# 2 MB per file, 5 files max (~10 MB total). Sized for ~20 msg/min household rate
+# with years of headroom before rotation pressure; see research.md Decision 4.
 fh = logging.handlers.RotatingFileHandler(LOG_FILENAME, maxBytes=2000000, backupCount=5)
 
 # console handler
@@ -80,11 +82,12 @@ def main(argv=None):
         logger.info("Received SIGTERM, disconnecting MQTT client...")
         mqttc.loop_stop()
         mqttc.disconnect()
-        sys.exti(0)
+        sys.exit(0)
 
     signal.signal(signal.SIGTERM, handle_sigterm)
 
     logger.debug("Starting MQTT loop_forever")
+    # loop_forever() catches SIGINT internally and exits the loop cleanly without a custom handler
     mqttc.loop_forever()
     return 0
 

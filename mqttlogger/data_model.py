@@ -8,8 +8,8 @@ __author__ = 'Christopher Espy'
 
 import logging
 
-from sqlalchemy import Column, Integer, Date, Time, Text, Float, create_engine, MetaData
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, Date, Time, Text, Float, create_engine
+from sqlalchemy.orm import declarative_base
 
 from constants import ROOT_DIR
 from mqttlogger.db_connection import create_connection_string
@@ -43,8 +43,7 @@ def create():
 
     engine = create_engine(db_conn_str)
     module_logger.debug(f"Successfully created engine: {engine.url}")
-    metadata = MetaData(engine)
-    metadata.create_all(engine)
+    Base.metadata.create_all(engine)
     module_logger.debug(f"Created all tables.")
 
 
