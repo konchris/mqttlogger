@@ -153,7 +153,9 @@ connects and begins storing readings successfully.
 - **Database write failure**: If a storage write fails for any reason (database unavailable,
   connection error, etc.), the system MUST log an error entry with the failed record's device
   address, value, and failure cause, discard the message, and continue processing subsequent
-  messages without interruption. Data loss during database outages is accepted.
+  messages without interruption. Data loss during database outages is accepted for runtime
+  message processing. This policy does NOT apply during a graceful shutdown — FR-007 requires
+  the service to complete any in-flight write before exiting on receipt of a stop signal.
 - **Missing or malformed configuration**: If the configuration file is absent or cannot be
   parsed at startup, the service MUST exit immediately with a clear, human-readable error
   message identifying the problem. No attempt is made to start with default values or to
@@ -169,8 +171,9 @@ connects and begins storing readings successfully.
   upon connecting to the broker.
 - **FR-002**: The system MUST persist each received message as a discrete record containing:
   capture date, capture time, full device address (topic), and measurement value.
-- **FR-003**: The system MUST convert boolean message payloads to a numeric equivalent (1 for
-  true, 0 for false) before storage.
+- **FR-003**: The system MUST convert boolean message payloads to a floating-point equivalent
+  (1.0 for true, 0.0 for false) before storage, consistent with the Float type of the
+  `reading` column in the data store.
 - **FR-004**: The system MUST use the full MQTT topic string as the device identifier in every
   stored record, preserving the complete location and reading-type hierarchy.
 - **FR-005**: The system MUST emit a timestamped log entry for each of the following events:
@@ -257,8 +260,8 @@ connects and begins storing readings successfully.
   the broker without coordination from the logging service.
 - The MQTT broker is provided and managed separately; the logging service connects to it as a
   client and does not configure or administer the broker.
-- All sensor payloads are either numeric values (floats) or boolean strings (`true`/`false`);
-  no other payload formats are expected.
+- Sensor payloads are expected to be numeric values (floats) or boolean strings (`true`/`false`);
+  payloads outside these formats are treated as malformed per FR-013.
 - Readings are captured at the moment of receipt, not the moment of sensor measurement;
   clock drift between sensors and the logging host is not compensated for.
 - Data access for analysis (querying, visualization) is out of scope; a separate tool handles

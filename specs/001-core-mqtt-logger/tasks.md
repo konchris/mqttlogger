@@ -82,6 +82,7 @@ both records exist in the database within 5 seconds with correct device address 
 - [ ] T016 [P] [US1] Write integration test `test_send_boolean_true` publishing `b'true'` and asserting `reading == 1.0` in `tests/test_mqtt_client.py`
 - [ ] T017 [P] [US1] Write integration test `test_send_boolean_false` publishing `b'false'` and asserting `reading == 0.0` in `tests/test_mqtt_client.py`
 - [ ] T018 [US1] Write integration test `test_malformed_payload_discarded` publishing an unparseable payload (e.g., `b'not-a-number'`) and asserting no new DB record is written and service continues to accept messages in `tests/test_mqtt_client.py`
+- [ ] T035 [P] [US1] Write integration test `test_db_write_failure_continues` in `tests/test_mqtt_client.py` using `unittest.mock.patch` to make `mqttlogger.mqtt_client.insert` raise an exception — assert no record is written and the client continues processing subsequent messages (FR-014)
 
 **Checkpoint**: `pytest tests/test_mqtt_client.py::test_send_floats tests/test_mqtt_client.py::test_send_boolean_true tests/test_mqtt_client.py::test_send_boolean_false tests/test_mqtt_client.py::test_malformed_payload_discarded` all pass. US1 independently verified.
 
@@ -172,6 +173,8 @@ independently verified.
 - [ ] T030 [P] Update `README.md`: replace the Bitbucket placeholder content with a project overview, link to `specs/001-core-mqtt-logger/quickstart.md`, and link to `specs/001-core-mqtt-logger/spec.md`
 - [ ] T031 [P] Fix `docker-compose.yml` `mqtt_logger` volume: replace `./:/code` with `./config.json:/code/config.json` to prevent host/container dependency divergence in production deployments
 - [ ] T032 Run `pytest tests/` to confirm all tests pass after all implementation phases complete; address any failures before merging to `develop`
+- [ ] T033 [P] Add `pytest.ini` at repo root declaring `markers = integration: marks tests that require external services (MQTT broker, database)` and annotate all tests in `tests/test_mqtt_client.py` with `@pytest.mark.integration` so they can be skipped offline with `-m "not integration"`
+- [ ] T034 [P] Add a comment block at the top of `tests/conftest.py` documenting that: (1) `test_mqtt_server` connects to `test.mosquitto.org` and requires internet access, (2) no database fixture is defined — integration tests that call `insert()` require a running MariaDB instance, and (3) offline/CI runs should use `-m "not integration"` or spin up a local Mosquitto + MariaDB via Docker Compose
 
 ---
 
