@@ -32,8 +32,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY app.py config.json constants.py ./
 COPY mqttlogger ./mqttlogger
 
-# Create a non-root user to run the application
-RUN useradd -m appuser
+# Create a non-root user and transfer ownership of all copied files
+RUN useradd -m appuser && chown -R appuser:appuser /code
 USER appuser
 
 # Run the application
