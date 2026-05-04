@@ -18,8 +18,10 @@ services:
     volumes:
       - ./:/code
     depends_on:
-      - mqtt
-      - mariadb
+      mqtt:
+        condition: service_started
+      mariadb:
+        condition: service_healthy
     networks:
       - mqtt_net
       - mqtt_db

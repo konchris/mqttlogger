@@ -62,6 +62,36 @@ def test_malformed_payload_discarded(test_client, dummy_sender, test_mqtt_topic)
 
 
 @pytest.mark.integration
+def test_reconnect_after_disconnect(test_client, dummy_sender, test_mqtt_topic):
+    received = []
+    test_client.insert = lambda sr: received.append(sr)
+
+    # Confirm messages flow before disconnect
+    dummy_sender.publish(test_mqtt_topic, "1.0")
+    time.sleep(2)
+    assert len(received) == 1
+
+    # Override on_connect so reconnect re-subscribes to the test topic
+    def on_reconnect(client, userdata, flags, rc):
+        client.subscribe(test_mqtt_topic)
+
+    test_client.on_connect = on_reconnect
+    test_client.disconnect()
+    # loop_stop() waits for the thread to exit and clears _thread so loop_start() can restart
+    test_client.loop_stop()
+    test_client.reconnect()
+    test_client.loop_start()
+    time.sleep(2)
+
+    # Messages published after reconnect must still be received
+    dummy_sender.publish(test_mqtt_topic, "2.0")
+    time.sleep(2)
+
+    assert len(received) == 2
+    assert received[1].reading == pytest.approx(2.0)
+
+
+@pytest.mark.integration
 def test_db_write_failure_continues(test_client, dummy_sender, test_mqtt_topic):
     """FR-014: a DB write error must not stop subsequent messages from being processed."""
     # Raise on first call, succeed on second
