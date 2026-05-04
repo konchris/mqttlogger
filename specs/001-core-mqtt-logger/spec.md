@@ -18,7 +18,7 @@ other function has value. Every other story depends on data being stored.
 
 **Independent Test**: Deploy the service with a connected broker. Publish a sensor reading to
 the broker. Confirm a corresponding record exists in the data store within 5 seconds, containing
-the correct timestamp, device identifier, and value.
+the correct timestamp, device address, and value.
 
 **Acceptance Scenarios**:
 
@@ -28,11 +28,11 @@ the correct timestamp, device identifier, and value.
 
 2. **Given** a sensor device publishes a boolean state (e.g., fan on/off), **When** the logging
    service receives it, **Then** the boolean is stored as an equivalent numeric value (1 or 0)
-   with the correct device identifier and timestamp.
+   with the correct device address and timestamp.
 
 3. **Given** multiple sensors in different rooms publish readings within the same second, **When**
    the logging service receives them, **Then** all readings are stored as separate records, each
-   carrying its own device identifier, so location-level querying is unambiguous.
+   carrying its own device address, so location-level querying is unambiguous.
 
 ---
 
@@ -170,11 +170,12 @@ connects and begins storing readings successfully.
 - **FR-001**: The system MUST subscribe to all topics under the `environment/` address space
   upon connecting to the broker.
 - **FR-002**: The system MUST persist each received message as a discrete record containing:
-  capture date, capture time, full device address (topic), and measurement value.
+  capture date, capture time, full device address (topic), and measurement value. The capture
+  date and time are recorded in the host system's local timezone.
 - **FR-003**: The system MUST convert boolean message payloads to a floating-point equivalent
   (1.0 for true, 0.0 for false) before storage, consistent with the Float type of the
   `reading` column in the data store.
-- **FR-004**: The system MUST use the full MQTT topic string as the device identifier in every
+- **FR-004**: The system MUST use the full MQTT topic string as the device address in every
   stored record, preserving the complete location and reading-type hierarchy.
 - **FR-005**: The system MUST emit a timestamped log entry for each of the following events:
   broker connection, topic subscription, message receipt, storage write, disconnection, and

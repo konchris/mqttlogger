@@ -29,7 +29,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy application code
-COPY app.py config.json ./
+COPY app.py config.json constants.py ./
 COPY mqttlogger ./mqttlogger
 
 # Create a non-root user to run the application
