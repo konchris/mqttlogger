@@ -76,20 +76,33 @@ def on_message(client, userdata, message):
     module_logger.debug("Message payload: %s" % message.payload)
 
     # Convert the payload
-    if message.payload == b'true':
-        message_payload = True
-    elif message.payload == b'false':
-        message_payload = False
-    else:
-        message_payload = float(message.payload)
+    try:
+        if message.payload == b'true':
+            message_payload = True
+        elif message.payload == b'false':
+            message_payload = False
+        else:
+            message_payload = float(message.payload)
+    except (ValueError, TypeError):
+        module_logger.error(
+            "Malformed payload for topic %s: %r" % (message.topic, message.payload)
+        )
+        return
 
     module_logger.debug("The converted message payload is: %s" % message_payload)
-    #
+
     new_reading = SensorReading(currentdate=datetime.now().strftime("%Y-%m-%d"),
                                 currenttime=datetime.now().strftime("%H:%M:%S"),
                                 device=message.topic,
                                 reading=float(message_payload))
-    client.insert(new_reading)
+    try:
+        client.insert(new_reading)
+    except Exception as exc:
+        module_logger.error(
+            "DB write failed for device=%s value=%s: %s" % (
+                message.topic, new_reading.reading, exc
+            )
+        )
 
 
 def insert(sensor_reading):
@@ -114,6 +127,13 @@ def insert(sensor_reading):
     session = Session()
 
     module_logger.debug("Adding sensor reading")
-    session.add(sensor_reading)
-    session.commit()
-    module_logger.debug("Successfully commited to the db.")
+    try:
+        session.add(sensor_reading)
+        session.commit()
+        module_logger.debug("Successfully commited to the db.")
+    except Exception as exc:
+        module_logger.error(
+            "DB write failed for device=%s value=%s: %s" % (
+                sensor_reading.device, sensor_reading.reading, exc
+            )
+        )

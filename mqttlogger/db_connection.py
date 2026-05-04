@@ -26,10 +26,23 @@ def load_config_file(config_path: pathlib.Path) -> dict:
     config_data: dict
 
     """
-    assert config_path.exists()
-    config_file = open(config_path, 'r')
-    config_data = json.load(config_file)
-    config_file.close()
+    if not config_path.exists():
+        raise FileNotFoundError(f"Configuration file not found: {config_path}")
+
+    with open(config_path, 'r') as config_file:
+        config_data = json.load(config_file)  # raises json.JSONDecodeError on malformed JSON
+
+    required_keys = {
+        "mqtt_server_ip", "mqtt_server_port",
+        "db_ip", "db_port", "db_user", "db_password", "db_database",
+    }
+    missing = required_keys - config_data.keys()
+    if missing:
+        raise KeyError(
+            f"Configuration file {config_path} is missing required key(s): "
+            + ", ".join(sorted(missing))
+        )
+
     return config_data
 
 

@@ -55,3 +55,4 @@ mosquitto/log/
 config/
 dump/
 
+.claude/
