@@ -62,6 +62,14 @@ def test_malformed_payload_discarded(test_client, dummy_sender, test_mqtt_topic)
 
 
 @pytest.mark.integration
+def test_clean_disconnect(test_client, test_mqtt_topic):
+    assert test_client.is_connected()
+    test_client.loop_stop()
+    test_client.disconnect()
+    assert not test_client.is_connected()
+
+
+@pytest.mark.integration
 def test_reconnect_after_disconnect(test_client, dummy_sender, test_mqtt_topic):
     received = []
     test_client.insert = lambda sr: received.append(sr)

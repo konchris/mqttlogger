@@ -85,6 +85,7 @@ def main(argv=None):
     signal.signal(signal.SIGTERM, handle_sigterm)
 
     logger.debug("Starting MQTT loop_forever")
+    # loop_forever() catches SIGINT internally and exits the loop cleanly without a custom handler
     mqttc.loop_forever()
     return 0
 
