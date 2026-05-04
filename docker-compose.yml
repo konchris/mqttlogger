@@ -16,7 +16,7 @@ services:
     build:
       context: .
     volumes:
-      - ./:/code
+      - ./config.json:/code/config.json
     depends_on:
       mqtt:
         condition: service_started
