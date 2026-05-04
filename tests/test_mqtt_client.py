@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import logging
 import time
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 
 @pytest.mark.integration
@@ -59,6 +60,20 @@ def test_malformed_payload_discarded(test_client, dummy_sender, test_mqtt_topic)
 
     assert len(received) == 1
     assert received[0].reading == pytest.approx(22.5)
+
+
+def test_debug_flag_enables_verbose_logging(caplog):
+    import app as app_module
+
+    mock_mqttc = MagicMock()
+    mock_mqttc.loop_forever.return_value = None
+
+    with patch("app.mqtt.Client", return_value=mock_mqttc):
+        with caplog.at_level(logging.DEBUG, logger="mqttlogger"):
+            app_module.main(["--debug"])
+
+    debug_records = [r for r in caplog.records if r.levelno == logging.DEBUG]
+    assert len(debug_records) > 0, "no DEBUG records emitted with --debug flag"
 
 
 @pytest.mark.integration

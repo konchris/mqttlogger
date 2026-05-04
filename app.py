@@ -29,6 +29,8 @@ LOG_FILENAME = LOG_FOLDER / "mqttlogger.log"
 if not LOG_FOLDER.exists():
     LOG_FOLDER.mkdir()
 
+# 2 MB per file, 5 files max (~10 MB total). Sized for ~20 msg/min household rate
+# with years of headroom before rotation pressure; see research.md Decision 4.
 fh = logging.handlers.RotatingFileHandler(LOG_FILENAME, maxBytes=2000000, backupCount=5)
 
 # console handler
