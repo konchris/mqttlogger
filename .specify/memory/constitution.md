@@ -268,7 +268,8 @@ Aspirational (not yet enforced):
 |-----------|-----------|-------------|
 | Eclipse Mosquitto MQTT broker | Inbound | Message source; mqttlogger subscribes as a client |
 | MariaDB database | Outbound | Persistence target; all readings written here |
-| Smart-home sensor devices | Upstream (out of scope) | Publishers to the broker; independently operated |
+| HomeMatic IP sensors | Upstream (out of scope) | Physical sensor devices (temperature, humidity, etc.) that publish readings to the broker via RedMatic; independently operated |
+| CCU3 running RedMatic | Upstream (out of scope) | HomeMatic central control unit running the RedMatic firmware bridge; translates HomeMatic IP sensor readings into MQTT messages and publishes them to the Mosquitto broker. Known issue: publishes zero values for all readings on startup ("publish cached values on start" behaviour), which appear in the mqttlogger data store as spurious records |
 | Jupyter notebooks (`notebooks/`) | Downstream (out of scope) | Reads from MariaDB for ad-hoc analysis |
 
 ---
