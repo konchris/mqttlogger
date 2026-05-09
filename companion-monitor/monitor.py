@@ -51,14 +51,20 @@ GAP_WINDOW = int(os.environ.get("GAP_WINDOW_MINUTES", "10"))
 
 # --- Helpers -----------------------------------------------------------------
 
-def load_expected_sensors(path: str) -> list[str]:
+def load_sensor_config(path: str) -> tuple[list[str], set[str]]:
+    """Return (monitored, excluded) sensor sets from sensors.yml.
+
+    monitored  — gap-checked; alert if silent for > GAP_WINDOW minutes
+    excluded   — known event-driven sensors; suppressed from both gap and unknown alerts
+    """
     with open(path) as f:
         data = yaml.safe_load(f)
     sensors = data.get("sensors", [])
     if not sensors:
         raise ValueError(f"No sensors defined in {path}")
-    logger.info("Loaded %d expected sensors from %s", len(sensors), path)
-    return [str(s) for s in sensors]
+    excluded = set(str(s) for s in data.get("excluded", []))
+    logger.info("Loaded %d monitored + %d excluded sensors from %s", len(sensors), len(excluded), path)
+    return [str(s) for s in sensors], excluded
 
 
 def get_db_connection():
@@ -107,7 +113,7 @@ def push_notification(message: str, title: str = "mqttlogger alert") -> None:
 
 # --- Main loop ---------------------------------------------------------------
 
-def run_check(expected: list[str], alerted_missing: set, alerted_unknown: set) -> None:
+def run_check(expected: list[str], excluded: set[str], alerted_missing: set, alerted_unknown: set) -> None:
     try:
         active = query_active_sensors(GAP_WINDOW)
     except Exception as exc:
@@ -136,8 +142,9 @@ def run_check(expected: list[str], alerted_missing: set, alerted_unknown: set) -
         )
     alerted_missing -= now_recovered
 
-    # Direction 2: DB sensors absent from config (unknown / new sensor)
-    now_unknown = active - expected_set
+    # Direction 2: DB sensors absent from config (unknown / new sensor).
+    # Excluded sensors are known event-driven devices — suppress their unknown alerts.
+    now_unknown = active - expected_set - excluded
     new_unknowns = now_unknown - alerted_unknown
     gone_unknowns = alerted_unknown - now_unknown
 
@@ -160,13 +167,13 @@ def main() -> None:
     logger.info("Companion monitor starting up")
     logger.info("DB=%s:%s/%s  gap=%dmin  poll=%ds", DB_HOST, DB_PORT, DB_NAME, GAP_WINDOW, POLLING_INTERVAL)
 
-    expected = load_expected_sensors(SENSORS_FILE)
+    expected, excluded = load_sensor_config(SENSORS_FILE)
 
     alerted_missing: set[str] = set()
     alerted_unknown: set[str] = set()
 
     while True:
-        run_check(expected, alerted_missing, alerted_unknown)
+        run_check(expected, excluded, alerted_missing, alerted_unknown)
         time.sleep(POLLING_INTERVAL)
 
 

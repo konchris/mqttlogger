@@ -1,13 +1,26 @@
-# Expected sensors — MQTT device topics that must publish at least once per gap window.
-# Run bootstrap_sensors.py to generate this file from live DB history, then review
-# and remove any topics that should not raise alerts (e.g. test devices).
+# Sensor monitoring config for the companion DB monitor.
 #
-# Copy this file to sensors.yml before starting the companion_monitor service.
+# sensors:   Gap-monitored. Alert if silent for > GAP_WINDOW_MINUTES.
+#            Use only for periodic publishers (temperature, humidity).
+#
+# excluded:  Known event-driven sensors (window states, set points, radiator levels).
+#            Suppressed from both gap alerts and unknown-sensor alerts.
+#            They are logged to the DB as normal — just not monitored for silence.
+#
+# Run bootstrap_sensors.py to generate an initial list from live DB history,
+# then classify each sensor into the appropriate section.
 
 sensors:
-  - environment/indoor/bedroom/temperature
-  - environment/indoor/bedroom/humidity
-  - environment/indoor/living_room/temperature
-  - environment/indoor/living_room/humidity
-  - environment/outdoor/patio/temperature
-  # Add all expected sensors here — one MQTT topic per line
+  - environment/indoor/bedroom/thermostat_temperature
+  - environment/indoor/bedroom/thermostat_humidity
+  - environment/indoor/office/thermostat_temperature
+  - environment/indoor/office/thermostat_humidity
+  # Add all periodic sensors here
+
+excluded:
+  - environment/indoor/office/north_window_state
+  - environment/indoor/office/west_window_state
+  - environment/indoor/bedroom/south_window_state
+  - environment/indoor/bedroom/west_radiator_set_point
+  - environment/indoor/office/thermostat_set_point
+  # Add all event-driven sensors here
