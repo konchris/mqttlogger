@@ -6,10 +6,66 @@
 
 ### IP-001 — Prototype Viability
 
-**Status:** Pending
+**Status:** Artifacts delivered — hands-on evidence pending
 **Target Date:** ~2026-05-23 (within ~2 weeks of 2026-05-09)
 
 **Question:** Does the companion monitor correctly detect a known sensor gap via fault injection, and does dual-direction sensor config checking work in practice against the live database?
+
+---
+
+### Artifacts Delivered (2026-05-09)
+
+| Task | Artifact | Status |
+|------|----------|--------|
+| TASK-B-001 | `specs/002-mqttlogger-baseline/03-explore/option-b/research-ntfy-vs-gotify.md` — ntfy.sh selected; rationale documented; ASM-B-001 validated by analysis | Done |
+| TASK-B-003 | `companion-monitor/monitor.py` — gap detection + dual-direction config check + ntfy push + stateful alerting (alert on transition, not every poll) | Done |
+| TASK-B-003 | `companion-monitor/bootstrap_sensors.py` — queries distinct topics from last 30 days; writes `sensors.yml` | Done |
+| TASK-B-004 | `docker-compose.yml` — `ntfy` service (port 8080) + `companion_monitor` service (builds from `companion-monitor/`); both on `monitoring_net` + `mqtt_db` | Done |
+| TASK-B-004 | `companion-monitor/Dockerfile` + `companion-monitor/requirements.txt` (PyMySQL + PyYAML) | Done |
+| TASK-B-004 | `companion-monitor/sensors.yml.example` — template for operator configuration | Done |
+
+---
+
+### Operator Steps Required Before Evidence Collection
+
+1. Run bootstrap to populate sensor config (requires live DB access):
+   ```bash
+   DB_HOST=localhost DB_PORT=3306 DB_USER=<user> DB_PASSWORD=<pw> DB_NAME=<db> \
+       SENSORS_FILE=companion-monitor/sensors.yml \
+       python companion-monitor/bootstrap_sensors.py
+   ```
+   Review `companion-monitor/sensors.yml` and remove any test/transient topics.
+
+2. Start the OPT-B services:
+   ```bash
+   docker compose up -d ntfy companion_monitor
+   ```
+
+3. Verify companion monitor is running and making checks:
+   ```bash
+   docker compose logs -f companion_monitor
+   ```
+   Expect: `Check complete — active=N missing=0 unknown=0` every 5 minutes.
+
+4. Subscribe to alerts on phone: install the ntfy app → add subscription `http://<host-ip>:8080/mqttlogger-alerts`
+
+---
+
+### Evidence to Collect (TASK-B-002 through TASK-B-006)
+
+| Evidence Item | How to Collect | Target |
+|---------------|----------------|--------|
+| Sensor config bootstrap effort | Time to run bootstrap_sensors.py and review output | ≤ 30 min; no manual lookup required |
+| Sensor config completeness | Count gaps (topics known to exist but not in bootstrap output) | 0 unexpected gaps |
+| Polling interval selected | From POLLING_INTERVAL_SECONDS env var (default 300 s) | Record actual value used |
+| Fault injection run 1–3: time from `docker stop mqtt_logger` to ntfy notification received | Stopwatch × 3 (stop logger, wait for gap to show in DB, wait for monitor to detect and alert) | ≤ 2 × polling interval (≤ 10 min) |
+| False positive count over 24 h | Count spurious alerts during normal operation (excluding deliberate maintenance window) | 0 during steady-state; ≤ 1 during maintenance window |
+| Dual-direction check: unknown sensors found | Run for 1 week; count sensors discovered in DB but not in config | Record count; assess whether actionable |
+| Dual-direction check: silent sensors found | Run for 1 week; count sensors in config not seen in DB | Record count; assess whether stale config or real silence |
+| Codebase assessment | Review `companion-monitor/monitor.py` against Constitution Principle VII (Minimal Surface Area) | Could a returning developer understand it in one session? Yes/No |
+| DB query overhead | Check host CPU during polling vs. baseline; check `SHOW PROCESSLIST` during query | No measurable impact at this sensor scale |
+
+---
 
 **Evidence Gathered:** *(to be completed during exploration)*
 

@@ -1,0 +1,13 @@
+# Expected sensors — MQTT device topics that must publish at least once per gap window.
+# Run bootstrap_sensors.py to generate this file from live DB history, then review
+# and remove any topics that should not raise alerts (e.g. test devices).
+#
+# Copy this file to sensors.yml before starting the companion_monitor service.
+
+sensors:
+  - environment/indoor/bedroom/temperature
+  - environment/indoor/bedroom/humidity
+  - environment/indoor/living_room/temperature
+  - environment/indoor/living_room/humidity
+  - environment/outdoor/patio/temperature
+  # Add all expected sensors here — one MQTT topic per line

@@ -25,6 +25,7 @@ services:
     networks:
       - mqtt_net
       - mqtt_db
+      - monitoring_net   # OPT-A: reach Uptime Kuma for heartbeat push
     restart: unless-stopped
 
   mariadb:
@@ -51,8 +52,74 @@ services:
       timeout: 10s
       retries: 3
 
+  # --- OPT-A: Uptime Kuma push monitor -----------------------------------------
+  # After starting: open http://localhost:3001, create a Push monitor, copy the
+  # push URL, and add "heartbeat_url": "<url>" to config.json.
+  # The mqtt_logger will then push a heartbeat to this URL on every interval.
+  uptime_kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime_kuma
+    ports:
+      - "3001:3001"
+    volumes:
+      - uptime-kuma-data:/app/data
+    networks:
+      - monitoring_net
+    restart: unless-stopped
+
+  # --- OPT-B: ntfy notification server -----------------------------------------
+  # Push notification server for the companion monitor.
+  # Subscribe to alerts on your phone: install the ntfy app and subscribe to
+  # http://<host-ip>:8080/mqttlogger-alerts
+  ntfy:
+    image: binwiederhier/ntfy
+    container_name: ntfy
+    command: serve
+    ports:
+      - "8080:80"
+    volumes:
+      - ntfy-data:/var/lib/ntfy
+    networks:
+      - monitoring_net
+    restart: unless-stopped
+
+  # --- OPT-B: Companion database monitor ----------------------------------------
+  # Polls MariaDB for sensor gaps and sends alerts via ntfy.
+  # Before starting: copy companion-monitor/sensors.yml.example to
+  # companion-monitor/sensors.yml and run bootstrap_sensors.py to populate it.
+  companion_monitor:
+    container_name: companion_monitor
+    build:
+      context: ./companion-monitor
+    volumes:
+      - ./companion-monitor/sensors.yml:/app/sensors.yml:ro
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      ntfy:
+        condition: service_started
+    networks:
+      - mqtt_db
+      - monitoring_net
+    environment:
+      - DB_HOST=mariadb
+      - DB_PORT=3306
+      - DB_USER=${MYSQL_USER}
+      - DB_PASSWORD=${MYSQL_PASSWORD}
+      - DB_NAME=${MYSQL_DATABASE}
+      - NTFY_URL=http://ntfy:80/mqttlogger-alerts
+      - POLLING_INTERVAL_SECONDS=300
+      - GAP_WINDOW_MINUTES=10
+    restart: unless-stopped
+
 networks:
   mqtt_net:
     name: mqtt_net
   mqtt_db:
     name: mqtt_db
+  monitoring_net:
+    name: monitoring_net
+
+volumes:
+  uptime-kuma-data:
+  ntfy-data:
