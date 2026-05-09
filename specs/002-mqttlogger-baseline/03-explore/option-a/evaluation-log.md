@@ -55,9 +55,22 @@
 
 ---
 
-**Evidence Gathered:** *(to be completed during exploration)*
+**Evidence Gathered (2026-05-09):**
 
-**Assessment:** *(to be completed at IP-001)*
+| Evidence Item | Result | Notes |
+|---------------|--------|-------|
+| TASK-A-005: Fault injection run 1 | 120 s | Full Pending → Down cycle observed |
+| TASK-A-005: Fault injection run 2 | 50 s | Kill near end of heartbeat window |
+| TASK-A-005: Fault injection run 3 | 108 s | Pending → Down sequence confirmed |
+| TASK-A-005: Mean / Max | 93 s / 120 s | All runs within 2× heartbeat interval ✓ |
+| TASK-A-005: False negative count | 0 | All 3 runs detected and notified |
+| Notification delivery | ntfy (self-hosted) | Uptime Kuma → ntfy → web UI confirmed; iOS background push requires ntfy cloud relay (separate concern) |
+| Uptime Kuma internet-independence | Not yet tested | Pending — block outbound internet and retest |
+| LWT observable | Not yet tested | Pending — `mosquitto_sub -t 'mqttlogger/status'` during kill |
+| Resource delta (host RAM) | Not yet measured | Pending |
+| TASK-A-006: 24h false positive baseline | In progress | Started 15:07 UTC 2026-05-09; closes 15:07 UTC 2026-05-10 |
+
+**Assessment:** *(to be completed at IP-001 after 24h baseline closes)*
 
 **Decision:** Pending — Continue | Eliminate
 

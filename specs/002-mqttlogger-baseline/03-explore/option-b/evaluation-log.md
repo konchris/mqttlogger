@@ -67,9 +67,26 @@
 
 ---
 
-**Evidence Gathered:** *(to be completed during exploration)*
+**Evidence Gathered (2026-05-09):**
 
-**Assessment:** *(to be completed at IP-001)*
+| Evidence Item | Result | Notes |
+|---------------|--------|-------|
+| TASK-B-001: Notification tool selected | ntfy.sh | See research-ntfy-vs-gotify.md; simpler API, no token management, iOS+Android apps |
+| TASK-B-001: Internet-independence | Confirmed by analysis | ntfy.sh phone app connects directly to self-hosted server on LAN; no cloud relay required |
+| TASK-B-002: Sensor config bootstrap effort | ~15 min total | bootstrap_sensors.py + manual classification into sensors:/excluded: sections |
+| Sensor publish interval analysis | Slowest periodic: ~288 min (thermostat set points) | Drove GAP_WINDOW_MINUTES upward from initial 10 to 600 |
+| GAP_WINDOW_MINUTES selected | 600 min (10 hours) | 2× slowest periodic publisher interval; prevents false positives on set point sensors |
+| Polling interval selected | 300 s (5 min) | Default; no adjustment needed |
+| Sensors monitored | 13 (temperature + humidity only) | Set points, window/door states, radiator levels classified as excluded |
+| Dual-direction check: unknown sensors surfaced | Kitchen sensors (5) surfaced automatically on first publish | Correct behaviour — RISK-013 detection working |
+| Dual-direction check: excluded sensor handling | Added excluded: key to sensors.yml; suppresses known event-driven sensors from unknown alerts | Required code update to monitor.py |
+| ASM-B-004 (config drift): maintenance burden | Lower than initially assessed | Sensor topology is stable; additions are rare, one-time, and self-announcing via unknown-sensor alert |
+| Crash detection latency (analysis) | Up to 600 min (10 hours) | Fundamental limitation: gap window must cover slowest sensor publish interval |
+| TASK-B-005: Fault injection | Not yet run | OPT-B crash detection via gap window is theoretically viable but latency is ~10 hours worst case |
+| TASK-B-006: 24h false positive baseline | In progress | Started 13:15 UTC 2026-05-09; closes 13:15 UTC 2026-05-10; 1 known genuine alert (attic/thermostat_humidity silent >25h) |
+| Attic thermostat humidity | Genuinely silent >25 h | Sensor may have low battery or connectivity issue; not a false positive |
+
+**Assessment:** *(to be completed at IP-001 after 24h baseline closes)*
 
 **Decision:** Pending — Continue | Eliminate
 
