@@ -109,7 +109,7 @@ services:
       - DB_NAME=${MYSQL_DATABASE}
       - NTFY_URL=http://ntfy:80/mqttlogger-alerts
       - POLLING_INTERVAL_SECONDS=300
-      - GAP_WINDOW_MINUTES=10
+      - GAP_WINDOW_MINUTES=600
     restart: unless-stopped
 
 networks:
