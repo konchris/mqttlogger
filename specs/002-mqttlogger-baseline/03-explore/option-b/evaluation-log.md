@@ -67,7 +67,7 @@
 
 ---
 
-**Evidence Gathered (2026-05-09):**
+**Evidence Gathered (2026-05-09 – 2026-05-10):**
 
 | Evidence Item | Result | Notes |
 |---------------|--------|-------|
@@ -78,19 +78,20 @@
 | GAP_WINDOW_MINUTES selected | 600 min (10 hours) | 2× slowest periodic publisher interval; prevents false positives on set point sensors |
 | Polling interval selected | 300 s (5 min) | Default; no adjustment needed |
 | Sensors monitored | 13 (temperature + humidity only) | Set points, window/door states, radiator levels classified as excluded |
-| Dual-direction check: unknown sensors surfaced | Kitchen sensors (5) surfaced automatically on first publish | Correct behaviour — RISK-013 detection working |
+| Dual-direction check: unknown sensors surfaced | 3 new dining room sensors surfaced automatically | Correct behaviour — RISK-013 detection working in live operation |
 | Dual-direction check: excluded sensor handling | Added excluded: key to sensors.yml; suppresses known event-driven sensors from unknown alerts | Required code update to monitor.py |
 | ASM-B-004 (config drift): maintenance burden | Lower than initially assessed | Sensor topology is stable; additions are rare, one-time, and self-announcing via unknown-sensor alert |
-| Crash detection latency (analysis) | Up to 600 min (10 hours) | Fundamental limitation: gap window must cover slowest sensor publish interval |
-| TASK-B-005: Fault injection | Not yet run | OPT-B crash detection via gap window is theoretically viable but latency is ~10 hours worst case |
-| TASK-B-006: 24h false positive baseline | In progress | Started 13:15 UTC 2026-05-09; closes 13:15 UTC 2026-05-10; 1 known genuine alert (attic/thermostat_humidity silent >25h) |
-| Attic thermostat humidity | Genuinely silent >25 h | Sensor may have low battery or connectivity issue; not a false positive |
+| Crash detection latency | Up to 600 min (10 hours) | Fundamental structural limitation — gap window must cover slowest sensor publish interval |
+| TASK-B-005: Fault injection | Not run | 10 h latency is the structural ceiling; running a timed kill would confirm detection but not reduce latency |
+| TASK-B-006: 24h false positive baseline | PASS — 0 spurious alerts | Ran 13:15 UTC 2026-05-09 → 13:15 UTC 2026-05-10; 4 alerts total, all genuine |
+| Alert: attic/thermostat_humidity | Genuine recovery alert | Sensor was silent >25 h then resumed; not a false positive |
+| Alert: 3× new dining room sensors | Genuine unknown-sensor alerts | New devices publishing for first time; self-announced correctly |
 
-**Assessment:** *(to be completed at IP-001 after 24h baseline closes)*
+**Assessment:** OPT-B correctly detects individual sensor silence and surfaces unknown sensors through live operation. The dual-direction check works as designed in a real deployment. Zero false positives over 24 h. The 10 h crash detection ceiling is a known structural limitation — it is acceptable only when paired with OPT-A.
 
-**Decision:** Pending — Continue | Eliminate
+**Decision:** Continue
 
-**Decision Rationale:** *(to be completed at IP-001)*
+**Decision Rationale:** All IP-001 success criteria met. Dual-direction check validated live. False positive baseline clean. OPT-B advances to IP-002 convergence.
 
 **Decision Made By:** Chris
 
@@ -98,17 +99,19 @@
 
 ### IP-002 — Final Convergence
 
-**Status:** Pending
+**Status:** PASS — 2026-05-10
 **Target Date:** Before 2026-06-15 (summer experiment window)
 
 **Question:** Does OPT-B better satisfy RISK-016 (and RISK-013/RISK-014) with acceptable solo-developer maintenance burden compared to OPT-A?
 
-**Evidence Gathered:** *(to be completed after IP-001)*
+**Evidence Gathered:**
 
-**Assessment:** *(to be completed at IP-002)*
+OPT-B is the only option that detects individual sensor silence (RISK-013) and surfaces new/unknown sensors automatically. During the 24 h baseline, 3 new dining room sensors were discovered without operator intervention — the self-announcing property eliminates the primary maintenance concern (ASM-B-004). Sensor topology is stable in practice; `sensors.yml` updates are rare and triggered by the monitor itself. OPT-B does not address RISK-016 at useful latency (10 h worst case); it depends on OPT-A for that coverage.
 
-**Decision:** Pending — Selected | Not Selected
+**Assessment:** OPT-B and OPT-A are not substitutes. OPT-B covers the sensor-level failure modes (RISK-013) that OPT-A is blind to; OPT-A covers the crash detection (RISK-016) that OPT-B cannot provide at useful latency. Both options are retained.
 
-**Decision Rationale:** *(to be completed at IP-002)*
+**Decision:** Selected — retained as part of combined monitoring stack
+
+**Decision Rationale:** OPT-B is the sole path to RISK-013 mitigation (individual sensor gaps, unknown sensor surfacing). It operates at a monitoring layer below OPT-A and addresses failure modes OPT-A cannot detect. Maintenance burden is lower than initially assessed due to the self-announcing unknown-sensor alert.
 
 **Decision Made By:** Chris

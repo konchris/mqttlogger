@@ -12,26 +12,28 @@ Home automation sensor logger. HomeMatic IP sensors publish via CCU3/RedMatic ov
 - Phase 1 (Solution Space): **PASS** — gate report at `specs/002-mqttlogger-baseline/gate-reports/gate-1-pass.md`
 - Phase 2+: not yet started
 
-Active branch: **`002-mqttlogger-baseline-ip001`** (IP-001 exploration prototypes)
+Active branch: **`002-mqttlogger-baseline-ip001`** (IP-001/IP-002 complete)
 
-### IP-001 exploration status (as of 2026-05-10)
+### Exploration status — CONVERGED (2026-05-10)
 
-Two options under parallel evaluation:
+**Both options selected** — they monitor different layers and are not substitutes.
 
-**OPT-A — Uptime Kuma heartbeat push**
+**OPT-A — Uptime Kuma heartbeat push** (process layer)
 - Heartbeat emitted from `mqttlogger/heartbeat.py` every 60 s to Uptime Kuma push endpoint
 - Uptime Kuma notifies via self-hosted ntfy (`http://ntfy:80/mqttlogger-alerts`)
-- Fault injection (TASK-A-005): 3/3 runs detected, mean 93 s, max 120 s ✓
-- 24h false positive baseline (TASK-A-006): **PASS** — zero spurious alerts
+- Fault injection: 3/3 runs detected, mean 93 s, max 120 s ✓; 24h baseline PASS
+- Covers: **RISK-016** (crash detection) — ≤120 s latency
 
-**OPT-B — Companion DB monitor**
+**OPT-B — Companion DB monitor** (sensor layer)
 - `companion-monitor/monitor.py` polls MariaDB every 5 min, 600-min gap window
 - Dual-direction check: missing periodic sensors → alert; new unknown sensors → alert
 - 13 periodic sensors monitored (temp/humidity); 15 event-driven sensors excluded
-- 24h false positive baseline (TASK-B-006): **PASS** — zero spurious alerts; all 4 alerts were genuine (attic humidity recovery + 3 new dining room sensors surfaced automatically)
-- Key finding: crash detection latency up to 10 hours (gap window constraint) vs OPT-A's 120 s max
+- 24h baseline PASS — 4 genuine alerts (attic humidity recovery + 3 new dining room sensors)
+- Covers: **RISK-013** (sensor topology changes silently) — individual sensor silence + auto-surfacing of new devices
 
-**Next step:** IP-002 convergence — compare options and select one. Then `/se-architecture` (Phase 3).
+**RISK-014** (historical completeness): deferred to a later iteration.
+
+**Next step:** `/se-architecture` (Phase 3 — Architecture Definition).
 
 ## Repository layout
 

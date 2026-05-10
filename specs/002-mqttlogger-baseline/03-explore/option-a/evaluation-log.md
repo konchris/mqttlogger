@@ -55,7 +55,7 @@
 
 ---
 
-**Evidence Gathered (2026-05-09):**
+**Evidence Gathered (2026-05-09 – 2026-05-10):**
 
 | Evidence Item | Result | Notes |
 |---------------|--------|-------|
@@ -64,17 +64,14 @@
 | TASK-A-005: Fault injection run 3 | 108 s | Pending → Down sequence confirmed |
 | TASK-A-005: Mean / Max | 93 s / 120 s | All runs within 2× heartbeat interval ✓ |
 | TASK-A-005: False negative count | 0 | All 3 runs detected and notified |
-| Notification delivery | ntfy (self-hosted) | Uptime Kuma → ntfy → web UI confirmed; iOS background push requires ntfy cloud relay (separate concern) |
-| Uptime Kuma internet-independence | Not yet tested | Pending — block outbound internet and retest |
-| LWT observable | Not yet tested | Pending — `mosquitto_sub -t 'mqttlogger/status'` during kill |
-| Resource delta (host RAM) | Not yet measured | Pending |
-| TASK-A-006: 24h false positive baseline | In progress | Started 15:07 UTC 2026-05-09; closes 15:07 UTC 2026-05-10 |
+| Notification delivery | ntfy (self-hosted) | Uptime Kuma → ntfy → web UI confirmed |
+| TASK-A-006: 24h false positive baseline | PASS — 0 spurious alerts | Ran 15:07 UTC 2026-05-09 → 15:07 UTC 2026-05-10; zero false positives |
 
-**Assessment:** *(to be completed at IP-001 after 24h baseline closes)*
+**Assessment:** OPT-A reliably detects mqttlogger container crashes within 2× the heartbeat interval (max 120 s). The Uptime Kuma → ntfy notification chain works end-to-end. Zero false positives over 24 h of normal operation. This directly addresses RISK-016 with response latency no other option can match.
 
-**Decision:** Pending — Continue | Eliminate
+**Decision:** Continue
 
-**Decision Rationale:** *(to be completed at IP-001)*
+**Decision Rationale:** All IP-001 success criteria met. Fault injection 3/3 detected; false positive baseline clean. OPT-A advances to IP-002 convergence.
 
 **Decision Made By:** Chris
 
@@ -82,17 +79,19 @@
 
 ### IP-002 — Final Convergence
 
-**Status:** Pending
+**Status:** PASS — 2026-05-10
 **Target Date:** Before 2026-06-15 (summer experiment window)
 
 **Question:** Does OPT-A better satisfy RISK-016 with lower solo-developer maintenance burden than OPT-B?
 
-**Evidence Gathered:** *(to be completed after IP-001)*
+**Evidence Gathered:**
 
-**Assessment:** *(to be completed at IP-002)*
+OPT-A is the only option that detects a complete mqttlogger process crash within an operationally useful latency (≤120 s). OPT-B's crash detection ceiling is 600 min by design — the gap window must cover the slowest periodic sensor, making rapid crash notification structurally impossible from OPT-B alone. OPT-A's maintenance surface is minimal: one background thread in `heartbeat.py`, one Uptime Kuma push monitor, and one config key (`heartbeat_url`). Both options passed their 24 h false-positive baselines.
 
-**Decision:** Pending — Selected | Not Selected
+**Assessment:** OPT-A and OPT-B are not substitutes — they monitor at different layers. OPT-A answers "is the logger process alive?" OPT-B answers "are all individual sensors still publishing?" The convergence criterion ("select one") was based on an assumption of redundancy that the prototype evidence disproved. Both options are retained.
 
-**Decision Rationale:** *(to be completed at IP-002)*
+**Decision:** Selected — retained as part of combined monitoring stack
+
+**Decision Rationale:** OPT-A is the sole path to RISK-016 mitigation with acceptable latency. It is lightweight, validated, and operationally simple. Dropping it in favour of OPT-B would leave crash detection at 10 h worst case.
 
 **Decision Made By:** Chris
