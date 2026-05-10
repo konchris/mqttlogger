@@ -122,6 +122,9 @@ def run_check(expected: list[str], excluded: set[str], alerted_missing: set, ale
 
     expected_set = set(expected)
 
+    prev_missing = frozenset(alerted_missing)
+    prev_unknown = frozenset(alerted_unknown)
+
     # Direction 1: expected sensors absent from DB
     now_missing = expected_set - active
     now_recovered = alerted_missing - now_missing
@@ -157,10 +160,17 @@ def run_check(expected: list[str], excluded: set[str], alerted_missing: set, ale
     alerted_unknown.update(new_unknowns)
     alerted_unknown -= gone_unknowns
 
-    logger.info(
-        "Check complete — active=%d missing=%d unknown=%d",
-        len(active), len(alerted_missing), len(alerted_unknown),
-    )
+    state_changed = frozenset(alerted_missing) != prev_missing or frozenset(alerted_unknown) != prev_unknown
+    if state_changed:
+        logger.info(
+            "Check complete — active=%d missing=%d unknown=%d",
+            len(active), len(alerted_missing), len(alerted_unknown),
+        )
+    else:
+        logger.debug(
+            "Check complete (no change) — active=%d missing=%d unknown=%d",
+            len(active), len(alerted_missing), len(alerted_unknown),
+        )
 
 
 def main() -> None:
