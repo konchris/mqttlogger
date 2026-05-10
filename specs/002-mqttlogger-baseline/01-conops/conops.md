@@ -49,12 +49,14 @@ mqttlogger operates in the background without any user interface. It does not di
 | MariaDB database | Persistence target | Receives and stores every captured reading; co-hosted on the same mini PC |
 | Jupyter notebooks | Ad-hoc analysis | Reads from MariaDB for exploratory data analysis; not a real-time consumer |
 | Future dashboard | Planned downstream consumer | Not yet designed; expected to read from MariaDB |
+| Operator notification device (iPhone) | Alert recipient | Receives push notifications from the self-hosted ntfy server via the home LAN; the ntfy app connects directly to the LAN IP of the ntfy container — **notification delivery requires the device to be on the home network**. Off-network delivery (operator away from home) is not currently supported. See RISK-023. |
 
 ### Operational Constraints
 
 - **No formal maintenance windows.** Downtime can occur at operator discretion, but every minute offline is a minute of sensor data permanently lost.
 - **Loss-cost is roughly uniform** across time, with peaks during active experiments (e.g. summer cooling trials when the attic and bedroom temperature data is being actively used to evaluate interventions).
 - **Host auto-restart is not configured.** The mini PC BIOS is not set to restore power after an outage; all power-loss recovery requires manual host power-on before any services can restart.
+- **Notification delivery requires home network presence.** The ntfy push notification server is LAN-only; the operator's iPhone receives monitoring alerts only when connected to the home Wi-Fi network. A crash or sensor silence that occurs while the operator is away from home will not be notified until the operator returns and the device reconnects to the LAN. Off-network notification requires a VPN, Tailscale, or ntfy cloud relay — none of which are currently configured (see RISK-023).
 
 ---
 

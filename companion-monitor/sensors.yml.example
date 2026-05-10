@@ -1,0 +1,26 @@
+# Sensor monitoring config for the companion DB monitor.
+#
+# sensors:   Gap-monitored. Alert if silent for > GAP_WINDOW_MINUTES.
+#            Use only for periodic publishers (temperature, humidity).
+#
+# excluded:  Known event-driven sensors (window states, set points, radiator levels).
+#            Suppressed from both gap alerts and unknown-sensor alerts.
+#            They are logged to the DB as normal — just not monitored for silence.
+#
+# Run bootstrap_sensors.py to generate an initial list from live DB history,
+# then classify each sensor into the appropriate section.
+
+sensors:
+  - environment/indoor/bedroom/thermostat_temperature
+  - environment/indoor/bedroom/thermostat_humidity
+  - environment/indoor/office/thermostat_temperature
+  - environment/indoor/office/thermostat_humidity
+  # Add all periodic sensors here
+
+excluded:
+  - environment/indoor/office/north_window_state
+  - environment/indoor/office/west_window_state
+  - environment/indoor/bedroom/south_window_state
+  - environment/indoor/bedroom/west_radiator_set_point
+  - environment/indoor/office/thermostat_set_point
+  # Add all event-driven sensors here

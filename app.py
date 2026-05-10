@@ -16,6 +16,7 @@ import paho.mqtt.client as mqtt
 # Local libraries
 from constants import ROOT_DIR
 from mqttlogger.db_connection import load_config_file
+from mqttlogger.heartbeat import start_heartbeat
 from mqttlogger.mqtt_client import on_connect, on_message, insert
 
 # Create Logger
@@ -74,8 +75,21 @@ def main(argv=None):
 
     config = load_config_file(ROOT_DIR / "config.json")
 
+    # LWT — broker publishes "offline" to this topic if the client disconnects uncleanly.
+    # on_connect publishes "online" to the same topic after a successful connection.
+    STATUS_TOPIC = "mqttlogger/status"
+    mqttc.status_topic = STATUS_TOPIC
+    mqttc.will_set(STATUS_TOPIC, payload="offline", qos=1, retain=True)
+
     mqttc.connect(config["mqtt_server_ip"], config["mqtt_server_port"], 60)
     logger.debug("Client created")
+
+    # OPT-A heartbeat — push to Uptime Kuma push endpoint on a configurable interval.
+    # heartbeat_url is optional; heartbeat is disabled if the key is absent from config.json.
+    heartbeat_url = config.get("heartbeat_url")
+    if heartbeat_url:
+        heartbeat_interval = int(config.get("heartbeat_interval_seconds", 60))
+        start_heartbeat(heartbeat_url, heartbeat_interval)
 
     # Handle SIGTERM gracefully
     def handle_sigterm(signum, frame):

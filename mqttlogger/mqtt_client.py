@@ -52,6 +52,13 @@ def on_connect(client, userdata, flags, rc):
 
     """
     module_logger.debug("Connected with result code %s" % str(rc))
+
+    # Publish online status to the LWT topic so monitoring tools see a clear transition.
+    status_topic = getattr(client, 'status_topic', None)
+    if status_topic:
+        client.publish(status_topic, "online", qos=1, retain=True)
+        module_logger.info("Published online status to %s", status_topic)
+
     topics = ["environment/#"]
     for topic in topics:
         client.subscribe(topic)

@@ -1,0 +1,11 @@
+{
+  "db_ip": "mariadb",
+  "db_port": "3306",
+  "db_user": "<db_user>",
+  "db_password": "<db_password>",
+  "db_database": "sensorreadings",
+  "mqtt_server_ip": "mqtt",
+  "mqtt_server_port": 1883,
+  "heartbeat_url": "http://uptime_kuma:3001/api/push/<push_token>?status=up&msg=OK&ping=",
+  "heartbeat_interval_seconds": 60
+}

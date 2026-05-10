@@ -3,8 +3,8 @@
 **System:** mqttlogger
 **Feature:** 002-mqttlogger-baseline
 **Date:** 2026-05-09
-**Status:** ACTIVE — options under exploration
-**Last Updated By:** se-explore skill
+**Status:** CONVERGED — 2026-05-10
+**Last Updated By:** IP-002 convergence
 
 ---
 
@@ -44,12 +44,14 @@ This exploration focuses on passive observability — the system notifies the op
 
 ---
 
-## Active Options
+## Selected Options
 
-| Option ID | Name | Core Approach | Status | Eliminated At |
-|-----------|------|---------------|--------|---------------|
-| OPT-A | Heartbeat + Uptime Kuma | mqttlogger emits periodic HTTP heartbeat; Uptime Kuma monitors and alerts on silence | Active | — |
-| OPT-B | Companion Database Monitor | Separate process queries MariaDB for gaps and sensor silences; reports via self-hosted push notification | Active | — |
+Both options were retained at IP-002. They are complementary — monitoring at different system layers — and are not substitutes.
+
+| Option ID | Name | Core Approach | Status | Coverage |
+|-----------|------|---------------|--------|----------|
+| OPT-A | Heartbeat + Uptime Kuma | mqttlogger emits periodic HTTP heartbeat; Uptime Kuma monitors and alerts on silence | **Selected** | Process/container crash detection (RISK-016); ≤120 s latency |
+| OPT-B | Companion Database Monitor | Separate process queries MariaDB for gaps and sensor silences; reports via self-hosted push notification | **Selected** | Individual sensor silence + unknown sensor surfacing (RISK-013); ≤600 min latency |
 
 ## Eliminated Options
 
@@ -64,8 +66,8 @@ This exploration focuses on passive observability — the system notifies the op
 
 | IP ID | Milestone | Question to Answer | Evidence Threshold | Status |
 |-------|-----------|--------------------|--------------------|--------|
-| IP-001 | Prototype complete (target: within ~2 weeks of 2026-05-09) | **OPT-A:** Does Uptime Kuma running locally receive an mqttlogger heartbeat and fire an alert — with no internet dependency and no false positives — when the container is deliberately killed? **OPT-B:** Does the companion monitor correctly detect a known sensor gap via fault injection, and does dual-direction sensor config checking work in practice? | Working prototype on live system; fault injection test passed; 24h clean-run with no false positives | Pending |
-| IP-002 | Before summer experiment window (target: before 2026-06-15) | Which option better satisfies all three risks (RISK-013, RISK-014, RISK-016) with the lowest solo-developer maintenance burden? | At least one option has passed IP-001; evidence from prototype operation is sufficient to distinguish options on maintenance burden and coverage | Pending |
+| IP-001 | Prototype complete (target: within ~2 weeks of 2026-05-09) | **OPT-A:** Does Uptime Kuma running locally receive an mqttlogger heartbeat and fire an alert — with no internet dependency and no false positives — when the container is deliberately killed? **OPT-B:** Does the companion monitor correctly detect a known sensor gap via fault injection, and does dual-direction sensor config checking work in practice? | Working prototype on live system; fault injection test passed; 24h clean-run with no false positives | **PASS — 2026-05-10** |
+| IP-002 | Before summer experiment window (target: before 2026-06-15) | Which option better satisfies all three risks (RISK-013, RISK-014, RISK-016) with the lowest solo-developer maintenance burden? | At least one option has passed IP-001; evidence from prototype operation is sufficient to distinguish options on maintenance burden and coverage | **PASS — 2026-05-10** |
 
 ---
 
@@ -77,8 +79,29 @@ This exploration focuses on passive observability — the system notifies the op
 
 ---
 
+## Convergence Outcome
+
+**Date:** 2026-05-10
+**Decision:** Both OPT-A and OPT-B selected — combined monitoring stack.
+
+The original convergence criterion ("select one") assumed the two options were redundant. Prototype evidence disproved this: OPT-A and OPT-B monitor at different system layers and address non-overlapping failure modes.
+
+| Layer | Option | Failure Modes Covered | Latency |
+|-------|--------|-----------------------|---------|
+| Process | OPT-A | Container crash (RISK-016) | ≤120 s |
+| Sensor | OPT-B | Individual sensor silence (RISK-013); new sensor surfacing | ≤600 min |
+
+**Risk coverage at convergence:**
+- RISK-016 (crash leaves no visible marker): **Mitigated** — OPT-A detects within 2× heartbeat interval
+- RISK-013 (sensor topology changes silently): **Mitigated** — OPT-B dual-direction check surfaced 3 new dining room sensors automatically during baseline
+- RISK-014 (historical completeness unverifiable): **Open** — out of scope for this exploration; deferred to a later iteration
+
+**Next phase:** `/se-architecture` (Phase 3 — Architecture Definition)
+
+---
+
 ## Current Status
 
-**Options Active:** 2 (OPT-A, OPT-B)
+**Options Selected:** 2 (OPT-A + OPT-B — combined stack)
 **Options Eliminated:** 1 formal (OPT-C) + 1 pre-option (MQTT-to-phone)
-**Next Integration Point:** IP-001 — prototype viability
+**Exploration:** COMPLETE
