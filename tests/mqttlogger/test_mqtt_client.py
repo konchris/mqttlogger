@@ -1,6 +1,5 @@
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from mqttlogger.data_model import SensorReading
 from mqttlogger.mqtt_client import insert, on_message

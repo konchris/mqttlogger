@@ -44,7 +44,7 @@ def create():
     engine = create_engine(db_conn_str)
     module_logger.debug(f"Successfully created engine: {engine.url}")
     Base.metadata.create_all(engine)
-    module_logger.debug(f"Created all tables.")
+    module_logger.debug("Created all tables.")
 
 
 if __name__ == "__main__":
