@@ -261,6 +261,8 @@ These requirements describe the passive monitoring capability added by the OPT-A
 **Verification Method:** Demonstration — block outbound internet on the host; verify notifications still arrive on operator device via LAN-connected notification server
 **Status:** Implemented (ntfy self-hosted on local network; phone app connects to LAN IP)
 
+**Acceptance Constraint:** This requirement is satisfied only when the operator's iPhone is connected to the home Wi-Fi network. The ntfy app connects directly to the LAN IP of the ntfy container; there is no cloud relay. An alert generated while the operator is away from home will not be delivered to the device until the device reconnects to the home network. This is a known operational limitation, accepted at IP-002 convergence. See RISK-023.
+
 ---
 
 ### FR-MON-007 — Configurable Monitoring Parameters
