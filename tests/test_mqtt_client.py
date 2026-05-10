@@ -67,8 +67,10 @@ def test_debug_flag_enables_verbose_logging(caplog):
 
     mock_mqttc = MagicMock()
     mock_mqttc.loop_forever.return_value = None
+    stub_config = {"mqtt_server_ip": "localhost", "mqtt_server_port": 1883}
 
-    with patch("app.mqtt.Client", return_value=mock_mqttc):
+    with patch("app.mqtt.Client", return_value=mock_mqttc), \
+         patch("app.load_config_file", return_value=stub_config):
         with caplog.at_level(logging.DEBUG, logger="mqttlogger"):
             app_module.main(["--debug"])
 
