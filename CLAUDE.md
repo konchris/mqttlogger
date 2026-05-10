@@ -4,17 +4,32 @@
 
 Home automation sensor logger. HomeMatic IP sensors publish via CCU3/RedMatic over MQTT. mqttlogger subscribes and persists readings to MariaDB. Stack runs on `sietchtabr` (mini PC, not Raspberry Pi) via Docker Compose.
 
+## Previous SE feature
+
+**`002-mqttlogger-baseline`** — INCOSE SE baseline analysis. **CLOSED — merged to main 2026-05-10.**
+All phases complete (0–3). See `specs/002-mqttlogger-baseline/` for full artifact set.
+
+---
+
 ## Current SE feature
 
-**`002-mqttlogger-baseline`** — INCOSE SE baseline analysis of the existing system.
+**`003-cicd-pipeline`** — CI/CD pipeline with automated lint, test, and coverage gate.
 
-- Phase 0 (Problem Space): **PASS**
-- Phase 1 (Solution Space): **PASS** — gate report at `specs/002-mqttlogger-baseline/gate-reports/gate-1-pass.md`
-- Phase 2 (Exploration): **PASS** — both OPT-A and OPT-B selected; explore-summary at `specs/002-mqttlogger-baseline/03-explore/explore-summary.md`
-- Phase 3 (Architecture): **COMPLETE** — 6 views, 7 ADRs, arc42 narrative, RTM; see `specs/002-mqttlogger-baseline/05-architecture/`
-- Phase 4+: not yet started
+- Requirements: **BASELINED** — `specs/003-cicd-pipeline/04-requirements/requirements-register.md`
+- Plan: **DRAFT** — `specs/003-cicd-pipeline/07-plan/plan.md`
+- Implementation: not yet started
 
-Active branch: **`002-mqttlogger-baseline-ip001`** (IP-001/IP-002/Phase 3 complete)
+Active branch: **`003-cicd-pipeline`**
+
+### Closes
+
+- RISK-001: No CI/CD pipeline
+- RISK-024: companion_monitor has no automated tests
+- NFR-MAIN-001: ≥80% line coverage (Should Have — this feature makes it Must Have via gate)
+
+### Key open question before starting implementation
+
+**CI-OI-002:** Is the repo on GitHub (Actions) or Bitbucket (Pipelines)? Determines workflow syntax and location.
 
 ### Architecture status — COMPLETE (2026-05-10)
 
