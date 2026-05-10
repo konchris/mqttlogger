@@ -11,25 +11,21 @@ All phases complete (0–3). See `specs/002-mqttlogger-baseline/` for full artif
 
 ---
 
-## Current SE feature
+## Previous SE features
 
-**`003-cicd-pipeline`** — CI/CD pipeline with automated lint, test, and coverage gate.
+- **`002-mqttlogger-baseline`** — INCOSE SE baseline (Phases 0–3). **CLOSED — merged to main 2026-05-10.**
+- **`003-cicd-pipeline`** — CI/CD pipeline. **CLOSED — merged to main 2026-05-10.**
 
-- Requirements: **BASELINED** — `specs/003-cicd-pipeline/04-requirements/requirements-register.md`
-- Plan: **DRAFT** — `specs/003-cicd-pipeline/07-plan/plan.md`
-- Implementation: not yet started
+---
 
-Active branch: **`003-cicd-pipeline`**
+## Current state
 
-### Closes
+No active feature branch. Next candidates:
 
-- RISK-001: No CI/CD pipeline
-- RISK-024: companion_monitor has no automated tests
-- NFR-MAIN-001: ≥80% line coverage (Should Have — this feature makes it Must Have via gate)
-
-### Key open question before starting implementation
-
-**CI-OI-002:** Is the repo on GitHub (Actions) or Bitbucket (Pipelines)? Determines workflow syntax and location.
+- GitHub migration (activates `.github/workflows/ci.yml`)
+- Remove `mqttlogger/__init__.py` legacy code (raises coverage above 80% headroom)
+- Add Mosquitto broker service to CI (run existing `@pytest.mark.integration` tests)
+- Schema audit (RISK-019 / NFR-INT-001)
 
 ### Architecture status — COMPLETE (2026-05-10)
 
