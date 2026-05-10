@@ -4,17 +4,28 @@
 
 Home automation sensor logger. HomeMatic IP sensors publish via CCU3/RedMatic over MQTT. mqttlogger subscribes and persists readings to MariaDB. Stack runs on `sietchtabr` (mini PC, not Raspberry Pi) via Docker Compose.
 
-## Current SE feature
+## Previous SE feature
 
-**`002-mqttlogger-baseline`** — INCOSE SE baseline analysis of the existing system.
+**`002-mqttlogger-baseline`** — INCOSE SE baseline analysis. **CLOSED — merged to main 2026-05-10.**
+All phases complete (0–3). See `specs/002-mqttlogger-baseline/` for full artifact set.
 
-- Phase 0 (Problem Space): **PASS**
-- Phase 1 (Solution Space): **PASS** — gate report at `specs/002-mqttlogger-baseline/gate-reports/gate-1-pass.md`
-- Phase 2 (Exploration): **PASS** — both OPT-A and OPT-B selected; explore-summary at `specs/002-mqttlogger-baseline/03-explore/explore-summary.md`
-- Phase 3 (Architecture): **COMPLETE** — 6 views, 7 ADRs, arc42 narrative, RTM; see `specs/002-mqttlogger-baseline/05-architecture/`
-- Phase 4+: not yet started
+---
 
-Active branch: **`002-mqttlogger-baseline-ip001`** (IP-001/IP-002/Phase 3 complete)
+## Previous SE features
+
+- **`002-mqttlogger-baseline`** — INCOSE SE baseline (Phases 0–3). **CLOSED — merged to main 2026-05-10.**
+- **`003-cicd-pipeline`** — CI/CD pipeline. **CLOSED — merged to main 2026-05-10.**
+
+---
+
+## Current state
+
+No active feature branch. Next candidates:
+
+- GitHub migration (activates `.github/workflows/ci.yml`)
+- Remove `mqttlogger/__init__.py` legacy code (raises coverage above 80% headroom)
+- Add Mosquitto broker service to CI (run existing `@pytest.mark.integration` tests)
+- Schema audit (RISK-019 / NFR-INT-001)
 
 ### Architecture status — COMPLETE (2026-05-10)
 
