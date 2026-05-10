@@ -55,7 +55,31 @@ A requirement without a verification method is incomplete by definition.
 
 ## Functional Requirements
 
-*To be populated in the next phase when functional requirements are formally elicited and baselined. Each functional requirement (FR-001 through FR-016 from the existing spec.md) will receive a V&V plan entry.*
+*Populated from requirements-register.md (2026-05-10). Core logger FRs (FR-001..FR-014) and monitoring FRs (FR-MON-001..FR-MON-007).*
+
+| Req ID | Type | Short Description | Method | Stage | Pass Criterion | Responsible | Status |
+|--------|------|-------------------|--------|-------|----------------|-------------|--------|
+| FR-001 | FR | MQTT subscription — receive all messages on configured topic filter | T | ST | N messages published = N records in DB | Chris | Planned |
+| FR-002 | FR | Message parsing — device, timestamp, value extracted from payload | T | IT | Send known payload; verify DB row fields | Chris | Planned |
+| FR-003 | FR | Persistent storage — reading committed to DB before considered captured | T | ST | N published = N committed; partial-write on kill handled | Chris | Planned |
+| FR-004 | FR | Broker reconnection — automatic, no operator intervention | D | ST | Stop broker; restart; verify reconnect and capture resume | Chris | Planned |
+| FR-005 | FR | DB write failure handling — log, discard, continue | D | ST | Make DB unreachable; verify service continues; verify error logged | Chris | Planned |
+| FR-006 | FR | Lifecycle event logging — connect, disconnect, receive, write, startup, shutdown | I | ST | All 8 event types present in log across full exercise | Chris | Planned |
+| FR-007 | FR | Graceful shutdown — clean exit ≤ 10 s on SIGTERM/SIGINT | T | ST | SIGTERM → exit within 10 s; broker closed; no partial DB rows | Chris | Planned |
+| FR-008 | FR | External configuration — no hardcoded values | I | — | No credentials or addresses in source code | Chris | Planned |
+| FR-009 | FR | Non-root container execution | I | — | Dockerfile USER directive is non-root UID | Chris | Planned |
+| FR-010 | FR | Docker Compose deployment — full stack via single command | D | ST | `docker compose up -d` → logger captures test message | Chris | Planned |
+| FR-011 | FR | Startup validation — reject on missing/invalid config with specific error | T | ST | Each invalid input class → error names field, source, attempted value | Chris | Planned |
+| FR-012 | FR | Bounded log files — rotating with size and count limits | I | — | RotatingFileHandler or equivalent configured with non-zero limits | Chris | Planned |
+| FR-013 | FR | MQTT LWT — broker publishes "offline" on unexpected disconnect | T | ST | Kill process without SIGTERM; verify broker publishes "offline" | Chris | Planned |
+| FR-014 | FR | HTTP liveness heartbeat — push every configured interval; skip if no URL | T | IT | Heartbeat arrives at URL at interval; no error when URL absent | Chris | Planned |
+| FR-MON-001 | FR | Crash notification ≤ 120 s after container stop | T | ST | Kill logger; measure time to notification ≤ 120 s | Chris | **Validated** (IP-001: mean 93 s, max 120 s, 3/3) |
+| FR-MON-002 | FR | Sensor silence alert — periodic sensor absent > gap window | D | ST | Stop sensor for gap window; verify notification received | Chris | **Validated** (IP-001: attic humidity silence detected) |
+| FR-MON-003 | FR | Sensor recovery notification | D | ST | Allow silenced sensor to resume; verify recovery notification | Chris | **Validated** (IP-001: recovery notification confirmed) |
+| FR-MON-004 | FR | Unknown sensor detection — unrecognized sensor in DB triggers alert | D | ST | Allow new sensor to publish; verify alert within one poll cycle | Chris | **Validated** (IP-001: 3 dining room sensors auto-detected) |
+| FR-MON-005 | FR | Alert fires on state transition only — not every poll cycle | T | IT | Sustain silence for multiple cycles; verify exactly one alert | Chris | Planned |
+| FR-MON-006 | FR | Local push notification — fully LAN-only path to operator device | D | ST | Block outbound internet; verify notifications still arrive | Chris | Planned |
+| FR-MON-007 | FR | Configurable monitoring parameters via environment variables | I | — | All parameters env-var sourced; no hardcoded thresholds | Chris | Planned |
 
 ---
 
