@@ -56,3 +56,15 @@ config/
 dump/
 
 .claude/
+
+# Deployment-specific config (contains credentials or host-specific values)
+config.json
+companion-monitor/sensors.yml
+
+# Editor backup files
+*.yml~
+*.yaml~
+*.json~
+
+# Specify extension cache
+.specify/extensions/.cache/
