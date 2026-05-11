@@ -4,13 +4,6 @@
 
 Home automation sensor logger. HomeMatic IP sensors publish via CCU3/RedMatic over MQTT. mqttlogger subscribes and persists readings to MariaDB. Stack runs on `sietchtabr` (mini PC, not Raspberry Pi) via Docker Compose.
 
-## Previous SE feature
-
-**`002-mqttlogger-baseline`** — INCOSE SE baseline analysis. **CLOSED — merged to main 2026-05-10.**
-All phases complete (0–3). See `specs/002-mqttlogger-baseline/` for full artifact set.
-
----
-
 ## Previous SE features
 
 - **`002-mqttlogger-baseline`** — INCOSE SE baseline (Phases 0–3). **CLOSED — merged to main 2026-05-10.**
@@ -22,9 +15,7 @@ All phases complete (0–3). See `specs/002-mqttlogger-baseline/` for full artif
 
 No active feature branch. Next candidates:
 
-- GitHub migration (activates `.github/workflows/ci.yml`)
 - Remove `mqttlogger/__init__.py` legacy code (raises coverage above 80% headroom)
-- Add Mosquitto broker service to CI (run existing `@pytest.mark.integration` tests)
 - Schema audit (RISK-019 / NFR-INT-001)
 
 ### Architecture status — COMPLETE (2026-05-10)
@@ -47,9 +38,8 @@ No active feature branch. Next candidates:
 **Key open risks from architecture phase:**
 - RISK-020: heartbeat proves liveness, not capture activity (ADR-006 consequence)
 - RISK-023: ntfy is LAN-only — operator off home network misses notifications
-- RISK-024: `companion_monitor` has no automated tests (Constitution Principle VI gap)
 
-**Next step:** Phase 4+ (detailed design) or CI/CD pipeline (TBD-003) to close RISK-001/RISK-024.
+RISK-001 (no CI/CD) and RISK-024 (no automated tests for companion_monitor) — **CLOSED** by 003-cicd-pipeline.
 
 ## Repository layout
 
@@ -87,7 +77,7 @@ Logs: `docker compose exec mqtt_logger tail -f /code/logs/mqttlogger.log`
 
 - `mosquitto/config/mosquitto.conf: Permission denied` warning on `git status` on sietchtabr — pre-existing filesystem permission issue, harmless
 - CCU3/RedMatic publishes zero values for all sensors on startup (RISK-012)
-- `config.json` previously tracked with credentials in git history (RISK-002, TBD-004)
+- `config.json` previously tracked with credentials in git history — **scrubbed from history 2026-05-11** (git filter-repo; both secrets replaced)
 - BIOS auto-restart after power loss not configured on sietchtabr (OI-001)
 - attic/thermostat_humidity was silent >25 h on 2026-05-09 — resolved itself; monitor if it recurs
 
@@ -95,6 +85,11 @@ Logs: `docker compose exec mqtt_logger tail -f /code/logs/mqttlogger.log`
 
 `.specify/memory/constitution.md` — read before invoking any SE skill.
 
+## Repository
+
+GitHub: https://github.com/konchris/mqttlogger
+CI: GitHub Actions (`.github/workflows/ci.yml`) — lint (ruff) + test + coverage ≥80% on every push.
+
 ## Branching
 
-Feature branches → `develop` → `main`. Current feature branch: `002-mqttlogger-baseline-ip001`.
+Feature branches → `develop` → `main`. No active feature branch.
