@@ -92,4 +92,14 @@ CI: GitHub Actions (`.github/workflows/ci.yml`) — lint (ruff) + test + coverag
 
 ## Branching
 
-Feature branches → `develop` → `main`. No active feature branch.
+**Flow:** `feature/<name>` → `develop` → `main`
+
+**Rules (enforced via GitHub branch protection on both `main` and `develop`):**
+- No direct pushes — all changes via PR
+- Both CI jobs (`Lint (ruff)` and `Test`) must pass before merge
+- Branch must be up-to-date with the target before merging
+- Force pushes and deletions are blocked
+
+**Convention:** a feature branch is not merged until CI is green *and* the change has been verified on `sietchtabr` (deployment test is manual — the live broker and MariaDB cannot be replicated in CI).
+
+No active feature branch.
