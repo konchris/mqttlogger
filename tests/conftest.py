@@ -14,6 +14,7 @@
 # Skipping offline: run with `-m "not integration"` to skip all integration tests.
 
 import os
+import time
 import pytest
 from paho.mqtt import client
 import random
@@ -56,6 +57,9 @@ def test_client(test_mqtt_server, test_mqtt_topic):
     my_client.unsubscribe("environment/#")
     my_client.subscribe(test_mqtt_topic)
     my_client.loop_start()
+    deadline = time.time() + 5
+    while not my_client.is_connected() and time.time() < deadline:
+        time.sleep(0.05)
     yield my_client
     my_client.loop_stop()
 
