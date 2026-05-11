@@ -71,7 +71,10 @@ sietchtabr:~/docker/mqttlogger
 Services: `mqtt`, `mqtt_logger`, `mariadb`, `uptime_kuma` (port 3001), `ntfy` (port 8080), `companion_monitor`
 
 Logs: `docker compose exec mqtt_logger tail -f /code/logs/mqttlogger.log`
-(mqtt_logger writes to rotating file, not stdout — `docker compose logs` shows nothing)
+(mqtt_logger writes to rotating file, not stdout — `docker compose logs mqtt_logger` shows nothing)
+**Log timestamps are UTC.** Add 2 h for CEST.
+
+`docker compose logs uptime_kuma` works normally (Node.js writes to stdout).
 
 ## Key known issues / constraints
 
@@ -80,6 +83,9 @@ Logs: `docker compose exec mqtt_logger tail -f /code/logs/mqttlogger.log`
 - `config.json` previously tracked with credentials in git history — **scrubbed from history 2026-05-11** (git filter-repo; both secrets replaced)
 - BIOS auto-restart after power loss not configured on sietchtabr (OI-001)
 - attic/thermostat_humidity was silent >25 h on 2026-05-09 — resolved itself; monitor if it recurs
+- **After rotating DB credentials**, run `ALTER USER 'mqttlogger'@'%' IDENTIFIED BY '<new_password>'; FLUSH PRIVILEGES;` inside the mariadb container — the linuxserver/mariadb image does not reapply `MYSQL_PASSWORD` from the env if the data volume already exists.
+- **Uptime Kuma push monitor interval** should be 120 s (not 60 s) so a single late heartbeat doesn't trigger a false alert.
+- **Heartbeat 404 after `docker compose` restart**: `mqtt_logger` is on three networks and can get corrupt routing tables in its network namespace, causing 404s to `uptime_kuma` even though DNS resolves correctly. Fix: `docker compose restart mqtt_logger`.
 
 ## SE constitution
 
