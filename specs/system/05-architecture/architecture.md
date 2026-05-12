@@ -1,10 +1,10 @@
 # Architecture Documentation
 
 **System:** mqttlogger
-**Feature:** 002-mqttlogger-baseline
-**Date:** 2026-05-10
-**Status:** DRAFT
-**Last Updated By:** se-architecture skill
+**Feature:** 004-remove-init-legacy (reviewed; originally 002-mqttlogger-baseline)
+**Date:** 2026-05-12
+**Status:** DRAFT — reviewed for feature 004; no structural changes required
+**Last Updated By:** se-architecture skill (feature 004 review)
 **Notation:** C4 Model + Views and Beyond + arc42
 
 ---
@@ -69,8 +69,8 @@ Each Must Have NFR expressed as a stimulus-response scenario:
 | ID | Constraint | Source |
 | -- | ---------- | ------ |
 | OC-001 | Solo developer/operator — bus factor = 1 (RISK-004) | STK-001 / STK-002 |
-| OC-002 | No CI/CD pipeline currently in place (RISK-001) | Known gap; tracked as TBD-003 |
-| OC-003 | No automated test coverage currently enforced (NFR-MAIN-001 is Should Have, not Must Have) | Constitution Section VI; deferred |
+| OC-002 | CI/CD pipeline established (GitHub Actions: lint + test + 80% coverage gate) — RISK-001 closed by feature 003-cicd-pipeline | Constitution Section VI; TBD-003 closed |
+| OC-003 | Automated test coverage enforced at 80% gate in CI — 86.36% at feature 003 baseline; ~93% projected after feature 004 removes dead code from `__init__.py` | NFR-MAIN-001 satisfied |
 
 ### 2.3 Regulatory Constraints
 
@@ -241,9 +241,9 @@ Risks with architectural relevance (full register in `10-risk/risk-register.md`)
 
 **Known technical debt:**
 
-- No automated tests on either service (`mqttlogger/` or `companion-monitor/`). NFR-MAIN-001 (Should Have) deferred until CI/CD is established.
+- `mqttlogger/` test suite established by feature 003 (46 tests, 86% coverage); CI enforces 80% gate. Dead code in `__init__.py` being removed by feature 004, projecting ~93% coverage after that change. `companion-monitor/` still has no automated tests (RISK-024).
 - Python 3.10 reaching EOL October 2026 (RISK-003). Upgrade to 3.11+ before EOL.
-- Historical credential exposure in Bitbucket history (RISK-002). Audit before migration completes.
+- Historical credential exposure in Bitbucket/git history (RISK-002). Scrubbed with git filter-repo on 2026-05-11; both secrets replaced.
 - `sensors.yml` is not version-controlled (by design — deployment-specific data). No automated check that it is current with the deployed sensor topology.
 - companion_monitor has no health endpoint and no liveness signal of its own. A crashed companion_monitor is invisible to OPT-A (which monitors only mqtt_logger). This is a known gap: monitoring the monitor requires a separate mechanism not implemented in this phase.
 
