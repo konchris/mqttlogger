@@ -1,10 +1,10 @@
 # Verification and Validation Plan
 
 **System:** mqttlogger
-**Feature:** 002-mqttlogger-baseline
-**Date:** 2026-05-09
-**Status:** DRAFT — initiated by se-nfr; updated by se-architecture
-**Last Updated By:** se-architecture skill (2026-05-10)
+**Feature:** 004-remove-init-legacy (updated; originally 002-mqttlogger-baseline)
+**Date:** 2026-05-12
+**Status:** DRAFT — updated by feature 004
+**Last Updated By:** se-requirements skill (2026-05-12)
 
 ---
 
@@ -64,7 +64,7 @@ A requirement without a verification method is incomplete by definition.
 | FR-003 | FR | Persistent storage — reading committed to DB before considered captured | T | ST | N published = N committed; partial-write on kill handled | Chris | Planned |
 | FR-004 | FR | Broker reconnection — automatic, no operator intervention | D | ST | Stop broker; restart; verify reconnect and capture resume | Chris | Planned |
 | FR-005 | FR | DB write failure handling — log, discard, continue | D | ST | Make DB unreachable; verify service continues; verify error logged | Chris | Planned |
-| FR-006 | FR | Lifecycle event logging — connect, disconnect, receive, write, startup, shutdown | I | ST | All 8 event types present in log across full exercise | Chris | Planned |
+| FR-006 | FR | Lifecycle event logging — connect, disconnect, receive, write, startup, shutdown | I | ST | All 7 event types present in log across full exercise (corrected from 8: broker connect, broker disconnect, message received, DB write success, DB write failure, startup complete, shutdown initiated) | Chris | Planned |
 | FR-007 | FR | Graceful shutdown — clean exit ≤ 10 s on SIGTERM/SIGINT | T | ST | SIGTERM → exit within 10 s; broker closed; no partial DB rows | Chris | Planned |
 | FR-008 | FR | External configuration — no hardcoded values | I | — | No credentials or addresses in source code | Chris | Planned |
 | FR-009 | FR | Non-root container execution | I | — | Dockerfile USER directive is non-root UID | Chris | Planned |
@@ -80,6 +80,7 @@ A requirement without a verification method is incomplete by definition.
 | FR-MON-005 | FR | Alert fires on state transition only — not every poll cycle | T | IT | Sustain silence for multiple cycles; verify exactly one alert | Chris | Planned |
 | FR-MON-006 | FR | Local push notification — fully LAN-only path to operator device | D | AT | Block outbound internet; verify notifications arrive on operator's iPhone on home Wi-Fi (requires physical device on home network — cannot be automated) | Chris | Planned |
 | FR-MON-007 | FR | Configurable monitoring parameters via environment variables | I | — | All parameters env-var sourced; no hardcoded thresholds | Chris | Planned |
+| FR-022 | FR | No dead code in mqttlogger/__init__.py | I | — | `mqttlogger/__init__.py` contains no callable definitions; codebase search finds zero callers for any removed symbol | Chris | Implemented |
 
 ---
 
@@ -96,6 +97,26 @@ A requirement without a verification method is incomplete by definition.
 | SCN-005 | Broker temporarily unavailable | AT | After broker restart, logger reconnects automatically and resumes capture | Planned |
 | SCN-006 | HomeMatic startup zeros | AT | After CCU3 restart, spurious zeros are stored (or suppressed if RedMatic mitigation applied); no service interruption | Planned |
 | SCN-007 | Planned maintenance | AT | After docker compose down/up cycle, service resumes capture; operator confirms via DB inspection | Planned |
+
+---
+
+## Interface Verification
+
+*Populated by se-interfaces skill (2026-05-12). One entry per interface in icd.md.*
+
+| IF ID | Type | Name | Method | Stage | Pass Criterion | Responsible | Status |
+|-------|------|------|--------|-------|----------------|-------------|--------|
+| IF-001 | Interface | MQTT sensor ingestion (CCU3 → mosquitto) | T | ST | N messages published → N DB records; malformed payload → error log + no record | Chris | Planned |
+| IF-002 | Interface | Push notification delivery (ntfy → iPhone) | D | AT | Monitored event fires → push notification arrives on iPhone within 30 s; requires physical device on home LAN | Chris | Planned |
+| IF-003 | Interface | Database read access (MariaDB → external) | I | — | Port 3306 in docker-compose.yml; credentials not in VCS; schema matches data_model.py | Chris | Planned |
+| IF-004 | Interface | Operator deployment and operations | D | ST | `docker compose up -d` → all 6 containers healthy; test message captured; invalid config → specific error | Chris | Planned |
+| IF-005 | Interface | Monitoring dashboard (uptime_kuma → operator) | D | ST | Browser to :3001 shows UP in normal operation; shows DOWN within 120 s of container kill | Chris | Planned |
+| IF-006 | Interface | MQTT broker ↔ logger (internal) | T+D | ST | N messages → N DB records; broker restart → auto-reconnect; kill logger → status topic shows "offline" | Chris | Planned |
+| IF-007 | Interface | Logger → database write | T | ST | N messages → N committed rows; DB unreachable → error logged + service continues; no exit | Chris | Planned |
+| IF-008 | Interface | Logger → heartbeat monitor | T+D | IT+ST | Heartbeat GET fires at configured interval; silent if URL absent; kill logger → UK DOWN alert ≤120 s | Chris | Planned |
+| IF-009 | Interface | Heartbeat monitor → ntfy (OPT-A alert path) | D | ST | Kill mqtt_logger → ntfy receives POST to /mqttlogger-alerts within 120 s | Chris | Planned |
+| IF-010 | Interface | Sensor monitor → database read | T | IT | Silence > gap window → exactly one alert fired; sensor resumes → exactly one recovery notification | Chris | Planned |
+| IF-011 | Interface | Sensor monitor → ntfy (OPT-B alert path) | T+D | IT+ST | (T) State-transition alerting; (D) IP-001 validated — attic humidity silence/recovery confirmed | Chris | **Validated** (IP-001) |
 
 ---
 

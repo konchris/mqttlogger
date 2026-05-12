@@ -126,6 +126,84 @@ Same as Issue 1, Option C: introduce `/se-plan` that accepts SE artifacts as its
 | 1: `plan.md` path mismatch | `/se-architecture`, `/speckit-plan` | High — blocks workflow | Add SE-aware path logic to `/speckit-plan` (Option A) or introduce `/se-plan` (Option C) |
 | 2: No skill creates `requirements-register.md` | `/se-architecture` (pre-condition only) | High — significant manual gap | Create `/se-requirements` skill |
 | 3: `/speckit-plan` cannot read SE artifacts | `/speckit-plan` | Medium — workaround available | Introduce `/se-plan` or document incompatibility |
+| 4: System-level artifacts buried in feature-scoped directories | All SE skills | High — compounds with every feature | Introduce `specs/system/` for system artifacts; feature folders hold only feature-scoped work |
+
+---
+
+---
+
+## Issue 4 — System-level artifacts are buried in feature-scoped directories
+
+### Symptom
+
+The SE skill pack writes all artifacts under `specs/$FEATURE_ID/`, for example:
+
+```
+specs/002-mqttlogger-baseline/
+  00-stakeholders/
+  01-conops/
+  02-nfr/
+  03-explore/
+  04-requirements/
+  05-architecture/
+  09-vv/
+  10-risk/
+  rtm.md
+```
+
+Most of these artifacts — stakeholders, ConOps, NFRs, architecture, risk register, RTM — describe the **system as a whole**, not the specific feature that initiated the SE process. They are living documents intended to be updated with every subsequent feature iteration.
+
+Placing them under a feature ID directory creates several problems:
+
+1. **Implied ownership**: the path implies these artifacts belong to feature `002`, not to the system. A developer picking up feature `004` has no clear signal that `specs/002-mqttlogger-baseline/rtm.md` is the canonical, authoritative RTM they must update.
+2. **Discovery failure**: subsequent SE skills that carry update obligations (e.g., "update the risk register") have no reliable path to the system-level artifacts if they were established in a prior feature's folder.
+3. **Naming rot**: the feature folder name (`002-mqttlogger-baseline`) becomes misleading once the system evolves — the baseline stakeholder register is no longer "the baseline", it is simply "the stakeholder register".
+4. **No obvious upgrade path**: when the user runs `/se-risk` or `/se-rtm` in feature `003`, does it update `specs/002-mqttlogger-baseline/rtm.md`? Create `specs/003-cicd-pipeline/rtm.md`? The skill pack provides no guidance, so each run potentially fragments the system artifacts across multiple feature folders.
+
+### Root Cause
+
+The skill pack inherits speckit's convention that all artifacts are scoped to the active feature directory. This works well for feature-specific documents (spec, plan, tasks) but is structurally wrong for system-level SE artifacts, which must outlive any individual feature.
+
+### Proposed Fix
+
+Introduce a two-level artifact hierarchy:
+
+```
+specs/
+  system/                        # System-level SE artifacts — updated in place each feature
+    00-stakeholders/
+    01-conops/
+    02-nfr/
+    04-requirements/
+    05-architecture/
+    09-vv/
+    10-risk/
+    rtm.md
+  features/
+    002-mqttlogger-baseline/     # Feature-scoped artifacts only
+      spec.md (or se-plan)
+      tasks.md
+      gate-reports/
+    003-cicd-pipeline/
+      ...
+```
+
+**Rules:**
+- System-level skills (`/se-stakeholders`, `/se-conops`, `/se-nfr`, `/se-architecture`, `/se-risk`, `/se-rtm`, `/se-vvplan`) read and write from `specs/system/`.
+- Feature-scoped skills (`/speckit-specify`, `/speckit-plan`, `/speckit-tasks`, `/se-gate`) read and write from `specs/features/$FEATURE_ID/`.
+- The constitution declares the canonical path for system artifacts so all skills resolve them consistently.
+
+**Alternative (lighter weight):** Keep the current `specs/$FEATURE_ID/` convention for the founding feature, but have the constitution record the canonical system-artifact paths explicitly (e.g., `SYSTEM_SPECS_DIR = specs/002-mqttlogger-baseline`). Subsequent features read from that path and write updates back to it rather than creating their own copies.
+
+### Impact if Not Fixed
+
+- System artifacts fragment across feature folders over time
+- Skills with threaded update obligations silently write to the wrong location
+- New contributors (or future AI sessions) cannot reliably locate the authoritative risk register, RTM, or architecture without reading the constitution carefully
+
+### Severity
+
+**High** — structural issue that compounds with every feature iteration. Low cost to fix at skill-pack level; high cost to fix after several features have run.
 
 ---
 
