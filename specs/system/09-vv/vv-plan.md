@@ -64,7 +64,7 @@ A requirement without a verification method is incomplete by definition.
 | FR-003 | FR | Persistent storage — reading committed to DB before considered captured | T | ST | N published = N committed; partial-write on kill handled | Chris | Planned |
 | FR-004 | FR | Broker reconnection — automatic, no operator intervention | D | ST | Stop broker; restart; verify reconnect and capture resume | Chris | Planned |
 | FR-005 | FR | DB write failure handling — log, discard, continue | D | ST | Make DB unreachable; verify service continues; verify error logged | Chris | Planned |
-| FR-006 | FR | Lifecycle event logging — connect, disconnect, receive, write, startup, shutdown | I | ST | All 8 event types present in log across full exercise | Chris | Planned |
+| FR-006 | FR | Lifecycle event logging — connect, disconnect, receive, write, startup, shutdown | I | ST | All 7 event types present in log across full exercise (corrected from 8: broker connect, broker disconnect, message received, DB write success, DB write failure, startup complete, shutdown initiated) | Chris | Planned |
 | FR-007 | FR | Graceful shutdown — clean exit ≤ 10 s on SIGTERM/SIGINT | T | ST | SIGTERM → exit within 10 s; broker closed; no partial DB rows | Chris | Planned |
 | FR-008 | FR | External configuration — no hardcoded values | I | — | No credentials or addresses in source code | Chris | Planned |
 | FR-009 | FR | Non-root container execution | I | — | Dockerfile USER directive is non-root UID | Chris | Planned |

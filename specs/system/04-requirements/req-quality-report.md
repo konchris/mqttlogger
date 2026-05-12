@@ -355,7 +355,7 @@ None. No requirements fail any quality attribute.
 
 | REQ-ID | Attribute | Concern | Recommendation |
 | ------ | --------- | ------- | -------------- |
-| FR-006 | Complete | Lists 7 lifecycle events; V&V plan references "8 event types" — inconsistency | Confirm the correct count and update either the requirement or the V&V plan entry to match |
+| FR-006 | Complete | ~~Lists 7 lifecycle events; V&V plan references "8 event types" — inconsistency~~ **RESOLVED at Phase 2 gate: V&V plan corrected to 7 event types.** | |
 | FR-MON-004 | Unambiguous | "a sensor publishes readings that is not present" — grammatical ambiguity about what the relative clause modifies | Rewrite as: "…when a sensor **whose topic** is not present in the known sensor configuration and is not listed in the excluded sensors list…" |
 | FR-MON-005 | Necessary | Traces to "OPT-B design"; no explicit NEED-ID | Add `NEED-STK-001-002` as co-source in requirements register |
 
