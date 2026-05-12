@@ -1,10 +1,10 @@
 # Requirements Traceability Matrix
 
 **System:** mqttlogger
-**Feature:** 002-mqttlogger-baseline
-**Date:** 2026-05-10
-**Status:** DRAFT
-**Last Updated By:** se-architecture skill
+**Feature:** 004-remove-init-legacy (updated; originally 002-mqttlogger-baseline)
+**Date:** 2026-05-12
+**Status:** DRAFT — updated by feature 004
+**Last Updated By:** se-requirements skill
 
 ---
 
@@ -77,6 +77,14 @@ Maps every requirement to its source artifact, the architectural element that im
 | NFR-MAIN-001 | Test coverage ≥ 80% line coverage (Should Have) | Constitution VI, TBD-002 | No test suite currently; deferred to CI/CD establishment (TBD-003) | T | UT+IT | Planned (deferred) |
 | NFR-PORT-001 | Docker Compose on Linux amd64/arm64 | Constitution III | `docker-compose.yml`; Linux amd64 deployment on sietchtabr | D | ST | Planned |
 | NFR-INT-001 | DB schema owned by mqttlogger; all changes via migrations | NEED-STK-001-008, Constitution VII | `data_model.py` SQLAlchemy schema; migration scripts (audit required — RISK-019) | I | — | Planned |
+
+---
+
+## Section 4 — Code Quality (FR-022, Feature 004)
+
+| Req ID | Short Description | Source Need | Design Element | V&V Method | V&V Stage | Status |
+| ------ | ----------------- | ----------- | -------------- | ---------- | --------- | ------ |
+| FR-022 | No dead code in mqttlogger/__init__.py | NFR-MAIN-001, NEED-STK-001-007 | `mqttlogger/__init__.py` (emptied) | I | — | Open |
 
 ---
 

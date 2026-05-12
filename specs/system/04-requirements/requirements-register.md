@@ -1,10 +1,10 @@
 # Requirements Register
 
 **System:** mqttlogger
-**Feature:** 002-mqttlogger-baseline
-**Date:** 2026-05-10
-**Status:** BASELINED
-**Last Updated By:** speckit-plan (adapted for SE workflow)
+**Feature:** 004-remove-init-legacy (updated; originally 002-mqttlogger-baseline)
+**Date:** 2026-05-12
+**Status:** DRAFT — updated by feature 004
+**Last Updated By:** se-requirements skill
 
 ---
 
@@ -301,6 +301,25 @@ These requirements describe the passive monitoring capability added by the OPT-A
 | FR-MON-005 | — | — | — | Implemented |
 | FR-MON-006 | — | — | NFR-PORT-001 | Implemented |
 | FR-MON-007 | — | — | NFR-SEC-001 | Implemented |
+| FR-022 | — | — | NFR-MAIN-001 | Open (004) |
+
+---
+
+## Section 4 — Code Quality (Feature 004)
+
+Requirements derived from NFR-MAIN-001 and the 004-remove-init-legacy feature. No new operational scenarios — the change has zero runtime-observable effect. The single requirement formalises the structural obligation that enables NFR-MAIN-001 to be satisfied.
+
+---
+
+### FR-022 — No Dead Code in Package Module
+
+**Statement:** The `mqttlogger/__init__.py` file shall contain no callable definitions (functions or classes) or module-level executable statements that are not reachable from the application's production execution path or exercised by the automated test suite.
+
+**Source:** NFR-MAIN-001, NEED-STK-001-007
+**Priority:** Should Have
+**Verification Method:** Inspection — verify `mqttlogger/__init__.py` contains no callable definitions; confirm zero callers for any definition found via codebase search
+**IEEE 29148 Quality:** PASS on all 8 attributes
+**Status:** Open (feature 004)
 
 ---
 

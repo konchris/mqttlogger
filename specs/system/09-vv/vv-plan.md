@@ -1,10 +1,10 @@
 # Verification and Validation Plan
 
 **System:** mqttlogger
-**Feature:** 002-mqttlogger-baseline
-**Date:** 2026-05-09
-**Status:** DRAFT — initiated by se-nfr; updated by se-architecture
-**Last Updated By:** se-architecture skill (2026-05-10)
+**Feature:** 004-remove-init-legacy (updated; originally 002-mqttlogger-baseline)
+**Date:** 2026-05-12
+**Status:** DRAFT — updated by feature 004
+**Last Updated By:** se-requirements skill (2026-05-12)
 
 ---
 
@@ -80,6 +80,7 @@ A requirement without a verification method is incomplete by definition.
 | FR-MON-005 | FR | Alert fires on state transition only — not every poll cycle | T | IT | Sustain silence for multiple cycles; verify exactly one alert | Chris | Planned |
 | FR-MON-006 | FR | Local push notification — fully LAN-only path to operator device | D | AT | Block outbound internet; verify notifications arrive on operator's iPhone on home Wi-Fi (requires physical device on home network — cannot be automated) | Chris | Planned |
 | FR-MON-007 | FR | Configurable monitoring parameters via environment variables | I | — | All parameters env-var sourced; no hardcoded thresholds | Chris | Planned |
+| FR-022 | FR | No dead code in mqttlogger/__init__.py | I | — | `mqttlogger/__init__.py` contains no callable definitions; codebase search finds zero callers for any removed symbol | Chris | Planned |
 
 ---
 
