@@ -100,6 +100,26 @@ A requirement without a verification method is incomplete by definition.
 
 ---
 
+## Interface Verification
+
+*Populated by se-interfaces skill (2026-05-12). One entry per interface in icd.md.*
+
+| IF ID | Type | Name | Method | Stage | Pass Criterion | Responsible | Status |
+|-------|------|------|--------|-------|----------------|-------------|--------|
+| IF-001 | Interface | MQTT sensor ingestion (CCU3 → mosquitto) | T | ST | N messages published → N DB records; malformed payload → error log + no record | Chris | Planned |
+| IF-002 | Interface | Push notification delivery (ntfy → iPhone) | D | AT | Monitored event fires → push notification arrives on iPhone within 30 s; requires physical device on home LAN | Chris | Planned |
+| IF-003 | Interface | Database read access (MariaDB → external) | I | — | Port 3306 in docker-compose.yml; credentials not in VCS; schema matches data_model.py | Chris | Planned |
+| IF-004 | Interface | Operator deployment and operations | D | ST | `docker compose up -d` → all 6 containers healthy; test message captured; invalid config → specific error | Chris | Planned |
+| IF-005 | Interface | Monitoring dashboard (uptime_kuma → operator) | D | ST | Browser to :3001 shows UP in normal operation; shows DOWN within 120 s of container kill | Chris | Planned |
+| IF-006 | Interface | MQTT broker ↔ logger (internal) | T+D | ST | N messages → N DB records; broker restart → auto-reconnect; kill logger → status topic shows "offline" | Chris | Planned |
+| IF-007 | Interface | Logger → database write | T | ST | N messages → N committed rows; DB unreachable → error logged + service continues; no exit | Chris | Planned |
+| IF-008 | Interface | Logger → heartbeat monitor | T+D | IT+ST | Heartbeat GET fires at configured interval; silent if URL absent; kill logger → UK DOWN alert ≤120 s | Chris | Planned |
+| IF-009 | Interface | Heartbeat monitor → ntfy (OPT-A alert path) | D | ST | Kill mqtt_logger → ntfy receives POST to /mqttlogger-alerts within 120 s | Chris | Planned |
+| IF-010 | Interface | Sensor monitor → database read | T | IT | Silence > gap window → exactly one alert fired; sensor resumes → exactly one recovery notification | Chris | Planned |
+| IF-011 | Interface | Sensor monitor → ntfy (OPT-B alert path) | T+D | IT+ST | (T) State-transition alerting; (D) IP-001 validated — attic humidity silence/recovery confirmed | Chris | **Validated** (IP-001) |
+
+---
+
 ## Results
 
 *To be populated during Phase 6 execution.*
