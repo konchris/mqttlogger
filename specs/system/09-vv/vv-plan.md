@@ -80,7 +80,7 @@ A requirement without a verification method is incomplete by definition.
 | FR-MON-005 | FR | Alert fires on state transition only — not every poll cycle | T | IT | Sustain silence for multiple cycles; verify exactly one alert | Chris | Planned |
 | FR-MON-006 | FR | Local push notification — fully LAN-only path to operator device | D | AT | Block outbound internet; verify notifications arrive on operator's iPhone on home Wi-Fi (requires physical device on home network — cannot be automated) | Chris | Planned |
 | FR-MON-007 | FR | Configurable monitoring parameters via environment variables | I | — | All parameters env-var sourced; no hardcoded thresholds | Chris | Planned |
-| FR-022 | FR | No dead code in mqttlogger/__init__.py | I | — | `mqttlogger/__init__.py` contains no callable definitions; codebase search finds zero callers for any removed symbol | Chris | Planned |
+| FR-022 | FR | No dead code in mqttlogger/__init__.py | I | — | `mqttlogger/__init__.py` contains no callable definitions; codebase search finds zero callers for any removed symbol | Chris | Implemented |
 
 ---
 

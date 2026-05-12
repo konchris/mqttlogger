@@ -301,7 +301,7 @@ These requirements describe the passive monitoring capability added by the OPT-A
 | FR-MON-005 | — | — | — | Implemented |
 | FR-MON-006 | — | — | NFR-PORT-001 | Implemented |
 | FR-MON-007 | — | — | NFR-SEC-001 | Implemented |
-| FR-022 | — | — | NFR-MAIN-001 | Open (004) |
+| FR-022 | — | — | NFR-MAIN-001 | Implemented |
 
 ---
 
@@ -348,7 +348,7 @@ Requirements derived from NFR-MAIN-001 and the 004-remove-init-legacy feature. N
 **Priority:** Should Have
 **Verification Method:** Inspection — verify `mqttlogger/__init__.py` contains no callable definitions; confirm zero callers for any definition found via codebase search
 **IEEE 29148 Quality:** PASS on all 8 attributes
-**Status:** Open (feature 004)
+**Status:** Implemented
 
 ---
 
