@@ -1,10 +1,10 @@
 # Requirements Traceability Matrix
 
 **System:** mqttlogger
-**Feature:** 002-mqttlogger-baseline
-**Date:** 2026-05-10
-**Status:** DRAFT
-**Last Updated By:** se-architecture skill
+**Feature:** 004-remove-init-legacy (reviewed; originally 002-mqttlogger-baseline)
+**Date:** 2026-05-12
+**Status:** DRAFT — updated by feature 004 architecture review
+**Last Updated By:** se-architecture skill (feature 004)
 
 ---
 
@@ -74,9 +74,17 @@ Maps every requirement to its source artifact, the architectural element that im
 | NFR-SEC-001 | Credentials not in version control | RISK-002, TBD-004 | `config.json` gitignored; `sensors.yml` gitignored; `.gitignore` verified | I | — | Planned |
 | NFR-USE-001 | Error messages identify field, source, value | NEED-STK-001-007 | `db_connection.py` validation errors; `mqtt_client.py` connection error messages | T | ST | Planned |
 | NFR-USE-002 | Log entries contain all 6 required fields | NEED-STK-001-002/006 | Python `logging.Formatter` in `app.py` with all 6 fields | I | ST | Planned |
-| NFR-MAIN-001 | Test coverage ≥ 80% line coverage (Should Have) | Constitution VI, TBD-002 | No test suite currently; deferred to CI/CD establishment (TBD-003) | T | UT+IT | Planned (deferred) |
+| NFR-MAIN-001 | Test coverage ≥ 80% line coverage (Should Have) | Constitution VI, TBD-002 | pytest + pytest-cov; `mqttlogger/` 86% (feature 003); ~93% projected (feature 004); GitHub Actions CI enforces 80% gate | T | UT+IT | Implemented |
 | NFR-PORT-001 | Docker Compose on Linux amd64/arm64 | Constitution III | `docker-compose.yml`; Linux amd64 deployment on sietchtabr | D | ST | Planned |
 | NFR-INT-001 | DB schema owned by mqttlogger; all changes via migrations | NEED-STK-001-008, Constitution VII | `data_model.py` SQLAlchemy schema; migration scripts (audit required — RISK-019) | I | — | Planned |
+
+---
+
+## Section 4 — Code Quality (FR-022, Feature 004)
+
+| Req ID | Short Description | Source Need | Design Element | V&V Method | V&V Stage | Status |
+| ------ | ----------------- | ----------- | -------------- | ---------- | --------- | ------ |
+| FR-022 | No dead code in mqttlogger/__init__.py | NFR-MAIN-001, NEED-STK-001-007 | `mqttlogger/__init__.py` (emptied) | I | — | Implemented — Task: T002, T007 (feature-004) |
 
 ---
 
@@ -84,6 +92,6 @@ Maps every requirement to its source artifact, the architectural element that im
 
 | ID | Description | Target |
 | -- | ----------- | ------ |
-| RTM-OI-001 | NFR-MAIN-001 design element is "no test suite" — this is a gap, not a design element; deferred to CI/CD phase | TBD-003 |
+| RTM-OI-001 | CLOSED — NFR-MAIN-001 test suite established by feature 003-cicd-pipeline; CI enforces 80% coverage gate | Closed by 003-cicd-pipeline |
 | RTM-OI-002 | NFR-INT-001 design element depends on RISK-019 schema audit completing | Phase 4+ |
 | RTM-OI-003 | FR-MON-006 stage is AT (acceptance test) because it requires the operator's iPhone on the home LAN; cannot be fully verified in an isolated test environment | Phase 6 |
