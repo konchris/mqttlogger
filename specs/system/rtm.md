@@ -84,7 +84,7 @@ Maps every requirement to its source artifact, the architectural element that im
 
 | Req ID | Short Description | Source Need | Design Element | V&V Method | V&V Stage | Status |
 | ------ | ----------------- | ----------- | -------------- | ---------- | --------- | ------ |
-| FR-022 | No dead code in mqttlogger/__init__.py | NFR-MAIN-001, NEED-STK-001-007 | `mqttlogger/__init__.py` (emptied) | I | — | Open |
+| FR-022 | No dead code in mqttlogger/__init__.py | NFR-MAIN-001, NEED-STK-001-007 | `mqttlogger/__init__.py` (emptied) | I | — | Open — Task: T002, T007 (feature-004/08-tasks/tasks.md) |
 
 ---
 
