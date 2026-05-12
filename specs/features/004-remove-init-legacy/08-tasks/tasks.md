@@ -3,7 +3,7 @@
 **Feature:** 004-remove-init-legacy
 **Input:** `specs/004-remove-init-legacy/spec.md`, `specs/features/004-remove-init-legacy/07-plan/plan.md`
 **Date:** 2026-05-12
-**Status:** Open
+**Status:** Complete
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -18,7 +18,7 @@
 **Purpose:** Confirm the dead code is truly dead before touching anything. The plan identified
 zero callers via grep; this phase repeats that check at implementation time.
 
-- [ ] T001 Grep entire codebase for callers of `parse_agruments`, `main`, and `__author__` from `mqttlogger/__init__.py` — confirm zero results before making any change
+- [x] T001 Grep entire codebase for callers of `parse_agruments`, `main`, and `__author__` from `mqttlogger/__init__.py` — confirm zero results before making any change
 
 **Checkpoint:** Zero callers confirmed → safe to proceed to Phase 2.
 
@@ -31,8 +31,8 @@ single-line package docstring if ruff requires one).
 
 **Independent Test:** `pytest --cov=mqttlogger` passes with ≥ 80% coverage; `python -c "import mqttlogger"` succeeds.
 
-- [ ] T002 [US1] Remove `__author__`, `parse_agruments()`, `main()`, and the `if __name__ == '__main__'` block from `mqttlogger/__init__.py` — leave file empty or with a single newline
-- [ ] T003 [US1] Run `python -m ruff check mqttlogger/__init__.py` — if ruff warns on empty file, add a single-line package docstring `"""mqttlogger package."""`; otherwise leave empty (resolves OTQ-001 from plan.md)
+- [x] T002 [US1] Remove `__author__`, `parse_agruments()`, `main()`, and the `if __name__ == '__main__'` block from `mqttlogger/__init__.py` — leave file empty or with a single newline
+- [x] T003 [US1] Run `python -m ruff check mqttlogger/__init__.py` — if ruff warns on empty file, add a single-line package docstring `"""mqttlogger package."""`; otherwise leave empty (resolves OTQ-001 from plan.md)
 
 **Checkpoint:** `mqttlogger/__init__.py` contains no callable definitions, no `__author__`, no `if __name__` block.
 
@@ -43,10 +43,10 @@ single-line package docstring if ruff requires one).
 **Goal:** Confirm zero regressions, coverage gate passes, importability preserved, and all
 spec success criteria met.
 
-- [ ] T004 [P] [US1] Run `python -m ruff check` across the full project — verify lint passes with no new errors
-- [ ] T005 [P] [US2] Run `python -c "import mqttlogger"` — verify exit code 0 and no output (SC-004)
-- [ ] T006 [US1] Run `python -m pytest --cov=mqttlogger --cov-report=term-missing` — verify all tests pass and coverage ≥ 80% (SC-001, SC-002)
-- [ ] T007 [US1] Run `grep -r "parse_agruments\|mqttlogger\.main" .` — verify zero matches in the codebase (SC-003)
+- [x] T004 [P] [US1] Run `python -m ruff check` across the full project — verify lint passes with no new errors
+- [x] T005 [P] [US2] Run `python -c "import mqttlogger"` — verify exit code 0 and no output (SC-004)
+- [x] T006 [US1] Run `python -m pytest --cov=mqttlogger --cov-report=term-missing` — verify all tests pass and coverage ≥ 80% (SC-001, SC-002)
+- [x] T007 [US1] Run `grep -r "parse_agruments\|mqttlogger\.main" .` — verify zero matches in the codebase (SC-003)
 
 **Checkpoint:** All four verification tasks pass → both user stories are complete.
 
@@ -57,9 +57,9 @@ spec success criteria met.
 **Purpose:** Update SE artifacts to reflect that FR-022 is now implemented. These are
 documentation tasks, not code tasks.
 
-- [ ] T008 [P] Update `specs/system/04-requirements/requirements-register.md` — change FR-022 status from `Open (feature 004)` to `Implemented`
-- [ ] T009 [P] Update `specs/system/rtm.md` — change FR-022 status from `Open` to `Implemented`
-- [ ] T010 [P] Update `specs/system/09-vv/vv-plan.md` — change FR-022 status from `Planned` to `Implemented`
+- [x] T008 [P] Update `specs/system/04-requirements/requirements-register.md` — change FR-022 status from `Open (feature 004)` to `Implemented`
+- [x] T009 [P] Update `specs/system/rtm.md` — change FR-022 status from `Open` to `Implemented`
+- [x] T010 [P] Update `specs/system/09-vv/vv-plan.md` — change FR-022 status from `Planned` to `Implemented`
 
 **Checkpoint:** SE artifacts reflect the implementation state. Ready for Phase 5 gate.
 
