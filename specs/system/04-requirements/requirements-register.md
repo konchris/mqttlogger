@@ -3,8 +3,8 @@
 **System:** mqttlogger
 **Feature:** 004-remove-init-legacy (updated; originally 002-mqttlogger-baseline)
 **Date:** 2026-05-12
-**Status:** DRAFT — updated by feature 004
-**Last Updated By:** se-requirements skill
+**Status:** PASS WITH WARNINGS — quality gate passed; see req-quality-report.md
+**Last Updated By:** se-req-quality skill
 
 ---
 
@@ -232,7 +232,7 @@ These requirements describe the passive monitoring capability added by the OPT-A
 
 ### FR-MON-004 — Unknown Sensor Detection
 
-**Statement:** The monitoring system shall notify the operator when a sensor publishes readings to the database that is not present in the known sensor configuration and is not on the excluded (event-driven) sensors list.
+**Statement:** The monitoring system shall notify the operator when a sensor whose topic is not present in the known sensor configuration and is not listed in the excluded (event-driven) sensors list publishes readings to the database.
 
 **Source:** OPT-B convergence decision, RISK-013 (silent topology change)
 **Priority:** Must Have
@@ -245,7 +245,7 @@ These requirements describe the passive monitoring capability added by the OPT-A
 
 **Statement:** The monitoring system shall track alert state in memory so that each alert fires exactly once on transition (normal → alert, alert → normal), not on every polling cycle.
 
-**Source:** OPT-B design, prevents alert storm under prolonged fault
+**Source:** OPT-B design, NEED-STK-001-002 (failures must surface visibly, not flood)
 **Priority:** Must Have
 **Verification Method:** Test (IT) — sustain a sensor silence for multiple poll cycles; verify exactly one alert notification is sent; verify one recovery notification on resume
 **Status:** Implemented (in-memory sets `alerted_missing`, `alerted_unknown` in monitor.py)
@@ -302,6 +302,35 @@ These requirements describe the passive monitoring capability added by the OPT-A
 | FR-MON-006 | — | — | NFR-PORT-001 | Implemented |
 | FR-MON-007 | — | — | NFR-SEC-001 | Implemented |
 | FR-022 | — | — | NFR-MAIN-001 | Open (004) |
+
+---
+
+## Quality Gate Summary
+
+| Req ID | Quality Status | Notes |
+| ------ | -------------- | ----- |
+| FR-001 | PASS | |
+| FR-002 | PASS | |
+| FR-003 | PASS WITH WARNINGS | Singular: two-clause definition (acceptable) |
+| FR-004 | PASS WITH WARNINGS | Singular: "reconnect and resume" inseparable (acceptable) |
+| FR-005 | PASS WITH WARNINGS | Singular: failure-handling policy described in one statement (acceptable) |
+| FR-006 | PASS WITH WARNINGS | Complete: lists 7 events, V&V plan says 8 — resolve before Phase 3 |
+| FR-007 | PASS WITH WARNINGS | Singular: multi-step shutdown sequence (acceptable) |
+| FR-008 | PASS WITH WARNINGS | Singular: positive+negative form of same principle (acceptable) |
+| FR-009 | PASS | |
+| FR-010 | PASS | |
+| FR-011 | PASS WITH WARNINGS | Singular: reject+emit are inseparable (acceptable) |
+| FR-012 | PASS WITH WARNINGS | Singular: redundant second clause (acceptable) |
+| FR-013 | PASS WITH WARNINGS | Singular: two-sentence single capability (acceptable) |
+| FR-014 | PASS WITH WARNINGS | Singular: presence+absence cases (acceptable) |
+| FR-MON-001 | PASS | |
+| FR-MON-002 | PASS | |
+| FR-MON-003 | PASS | |
+| FR-MON-004 | PASS WITH WARNINGS | Unambiguous: rewritten to resolve grammatical ambiguity |
+| FR-MON-005 | PASS WITH WARNINGS | Necessary: NEED-STK-001-002 added as co-source |
+| FR-MON-006 | PASS WITH WARNINGS | Singular: two sentences for same LAN-only constraint (acceptable) |
+| FR-MON-007 | PASS WITH WARNINGS | Singular: positive+negative form of same principle (acceptable) |
+| FR-022 | PASS | |
 
 ---
 
