@@ -7,5 +7,6 @@
   "mqtt_server_ip": "mqtt",
   "mqtt_server_port": 1883,
   "heartbeat_url": "http://uptime_kuma:3001/api/push/<push_token>?status=up&msg=OK&ping=",
-  "heartbeat_interval_seconds": 60
+  "heartbeat_interval_seconds": 60,
+  "mqtt_topic_filter": "environment/#"
 }
