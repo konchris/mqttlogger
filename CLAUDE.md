@@ -115,6 +115,12 @@ CI: GitHub Actions (`.github/workflows/ci.yml`) — lint (ruff) + test + coverag
 - Branch must be up-to-date with the target before merging
 - Force pushes and deletions are blocked
 
-**Convention:** a feature branch is not merged until CI is green *and* the change has been verified on `sietchtabr` (deployment test is manual — the live broker and MariaDB cannot be replicated in CI).
+**Convention:** a feature branch is not merged until all four conditions are met:
+1. CI is green on the feature branch
+2. Phase 5 gate PASS artifact committed to the feature branch
+3. Phase 6 V&V closure artifact committed to the feature branch
+4. Deployment on `sietchtabr` performed **from the feature branch** (not after merge)
+
+The PR is opened only after all four conditions are met. The CI gate-check job enforces condition 2.
 
 No active feature branch.

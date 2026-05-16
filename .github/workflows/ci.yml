@@ -6,6 +6,19 @@ on:
     branches: [main, develop]
 
 jobs:
+  gate-check:
+    name: SE gate check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require Phase 5 gate PASS artifact
+        run: |
+          if ! find specs/ -name "gate-5-pass.md" | grep -q .; then
+            echo "ERROR: No gate-5-pass.md found in specs/."
+            echo "Run /se-gate 5 and commit the artifact to this branch before opening a PR."
+            exit 1
+          fi
+
   lint:
     name: Lint (ruff)
     runs-on: ubuntu-latest

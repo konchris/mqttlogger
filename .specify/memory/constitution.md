@@ -1,20 +1,24 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: (unversioned template) → 1.0.0
-Bump type: MINOR — initial ratification; all principles and sections newly defined.
+Version change: 1.0.0 → 1.1.0
+Bump type: MINOR — new rule added to Development Workflow (item 6).
 
-Modified principles: N/A (first ratification)
-Added sections: Core Principles (I–VII), Deployment Constraints, Development Workflow, Governance
+Modified principles: Development Workflow — added item 6 (gate artifact and deployment sequencing)
+Added sections: N/A
 Removed sections: N/A
 
+Rationale: Features 004–007 were repeatedly merged to develop/main before Phase 5/6 gate
+artifacts were complete. Root cause: se-tasks generated Phase 5 tasks that modelled deployment
+as post-merge rather than pre-PR. Constitution lacked an explicit rule. This amendment provides
+the rule so future se-tasks invocations generate the correct sequence.
+
 Templates reviewed:
-  ✅ .specify/templates/plan-template.md — Constitution Check section is generic; no principle-specific
-     gates needed beyond what the template already handles.
-  ✅ .specify/templates/spec-template.md — Functional/non-functional structure aligns with principles.
-  ✅ .specify/templates/tasks-template.md — Phase structure aligns with integration-preferred testing
-     and incremental delivery principles.
-  ✅ .specify/templates/checklist-template.md — Generic; no changes required.
+  ✅ .specify/templates/plan-template.md — Constitution Check section is generic; no changes needed.
+  ✅ .specify/templates/spec-template.md — No impact.
+  ✅ .specify/templates/tasks-template.md — Generic; se-tasks skill reads constitution at generation
+     time, so future Phase 5 task sequences will reflect item 6 without template changes.
+  ✅ .specify/templates/checklist-template.md — No impact.
 
 Deferred TODOs: None.
 -->
@@ -117,6 +121,11 @@ repo root clean signals intent and reduces cognitive overhead for contributors.
 4. The `Dockerfile` and `docker-compose.yml` MUST be updated in the same PR as any change to
    dependencies or runtime configuration that affects the container image.
 5. Any new dependency added to `requirements.txt` MUST have a pinned version.
+6. For SE features, a PR MUST NOT be opened until Phase 5 gate PASS and Phase 6 V&V closure
+   artifacts are committed to the feature branch. Deployment verification on sietchtabr MUST be
+   performed from the feature branch (not from `develop` or `main`). When generating Phase 5
+   tasks, the correct sequence is: CI passes on feature branch → deploy from feature branch →
+   confirm readings → run `/se-gate 5` → run `/se-gate 6` → open PR → merge.
 
 ## Governance
 
@@ -137,7 +146,7 @@ All PRs and code reviews MUST verify compliance with the active principles. Comp
 violates a principle MUST be explicitly justified in the Complexity Tracking section of the
 relevant `plan.md`.
 
-**Version**: 1.0.0 | **Ratified**: 2026-05-04 | **Last Amended**: 2026-05-04
+**Version**: 1.1.0 | **Ratified**: 2026-05-04 | **Last Amended**: 2026-05-16
 
 ---
 
