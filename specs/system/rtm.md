@@ -92,10 +92,10 @@ Maps every requirement to its source artifact, the architectural element that im
 
 | Req ID | Short Description | Source Need | Design Element | V&V Method | V&V Stage | Status |
 | ------ | ----------------- | ----------- | -------------- | ---------- | --------- | ------ |
-| FR-023 | Python 3.12 base image — main app | RISK-003, NEED-STK-001-004 | `Dockerfile` (FROM line) | I | — | Planned — Task: T004 (007) |
-| FR-024 | Python 3.12 base image — companion monitor | RISK-003, NEED-STK-001-004 | `companion-monitor/Dockerfile` (FROM line) | I | — | Planned — Task: T005 (007) |
-| FR-025 | CI pipeline executes on Python 3.12 | RISK-003, NFR-MAIN-001 | `.github/workflows/ci.yml` (both `python-version` entries) | I+T | IT | Planned — Task: T006 (007) |
-| FR-026 | Python 3.12-compatible dependency pins | RISK-003, NEED-STK-001-004 | `requirements.txt` (greenlet, SQLAlchemy, mysqlclient pins) | I+T | IT | Planned — Tasks: T001, T002, T003 (007) |
+| FR-023 | Python 3.12 base image — main app | RISK-003, NEED-STK-001-004 | `Dockerfile` (FROM line) | I | — | Implemented — T004 (007); commit 3f90084 |
+| FR-024 | Python 3.12 base image — companion monitor | RISK-003, NEED-STK-001-004 | `companion-monitor/Dockerfile` (FROM line) | I | — | Implemented — T005 (007); commit 3f90084 |
+| FR-025 | CI pipeline executes on Python 3.12 | RISK-003, NFR-MAIN-001 | `.github/workflows/ci.yml` (both `python-version` entries) | I+T | IT | Implemented — T006 (007); commit 3f90084; CI green PR #9/#10 |
+| FR-026 | Python 3.12-compatible dependency pins | RISK-003, NEED-STK-001-004 | `requirements.txt` (greenlet, SQLAlchemy, mysqlclient pins) | I+T | IT | Implemented — T001–T003 (007); commits 3f90084, 1b7fac2 |
 
 ---
 

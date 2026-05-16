@@ -375,7 +375,7 @@ Requirements derived from RISK-003 (Python 3.10 EOL October 2026), NFR-PORT-001,
 **Priority:** Must Have
 **Verification Method:** Inspection — verify `Dockerfile` first line is `FROM python:3.12-slim`
 **IEEE 29148 Quality:** PASS on all 8 attributes
-**Status:** Planned
+**Status:** Implemented — commit 3f90084 (007)
 
 ---
 
@@ -388,7 +388,7 @@ Requirements derived from RISK-003 (Python 3.10 EOL October 2026), NFR-PORT-001,
 **Priority:** Must Have
 **Verification Method:** Inspection — verify `companion-monitor/Dockerfile` first line is `FROM python:3.12-slim`
 **IEEE 29148 Quality:** PASS on all 8 attributes
-**Status:** Planned
+**Status:** Implemented — commit 3f90084 (007)
 
 ---
 
@@ -401,7 +401,7 @@ Requirements derived from RISK-003 (Python 3.10 EOL October 2026), NFR-PORT-001,
 **Priority:** Must Have
 **Verification Method:** Inspection + Test — verify `ci.yml` `python-version` entries specify `"3.12"`; CI lint and test+coverage jobs pass on Python 3.12
 **IEEE 29148 Quality:** PASS on all 8 attributes
-**Status:** Planned
+**Status:** Implemented — commit 3f90084 (007); CI green on Python 3.12 (PR #9, PR #10)
 
 ---
 
@@ -414,7 +414,7 @@ Requirements derived from RISK-003 (Python 3.10 EOL October 2026), NFR-PORT-001,
 **Priority:** Must Have
 **Verification Method:** Inspection + Test — verify `requirements.txt` satisfies the stated minimums; CI passes with updated pins on Python 3.12
 **IEEE 29148 Quality:** PASS WITH WARNINGS — Singular: three package constraints stated in one requirement; all serve the single Python 3.12 compatibility obligation (acceptable per FR-003/FR-007 precedent)
-**Status:** Planned
+**Status:** Implemented — commit 3f90084 (007); pkg-config fix 1b7fac2 (007)
 
 ---
 
