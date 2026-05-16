@@ -4,10 +4,12 @@
 
 Home automation sensor logger. HomeMatic IP sensors publish via CCU3/RedMatic over MQTT. mqttlogger subscribes and persists readings to MariaDB. Stack runs on `sietchtabr` (mini PC, not Raspberry Pi) via Docker Compose.
 
-## Previous SE features
+## Completed SE features
 
 - **`002-mqttlogger-baseline`** — INCOSE SE baseline (Phases 0–3). **CLOSED — merged to main 2026-05-10.**
 - **`003-cicd-pipeline`** — CI/CD pipeline. **CLOSED — merged to main 2026-05-10.**
+- **`004-remove-init-legacy`** — removed dead code from `mqttlogger/__init__.py`. **CLOSED — merged to main 2026-05-16.**
+- **`005-schema-audit`** — schema reference document + `db/initial-schema.sql`. **CLOSED — merged to main 2026-05-16.**
 
 ---
 
@@ -15,8 +17,11 @@ Home automation sensor logger. HomeMatic IP sensors publish via CCU3/RedMatic ov
 
 No active feature branch. Next candidates:
 
-- Remove `mqttlogger/__init__.py` legacy code (raises coverage above 80% headroom)
-- Schema audit (RISK-019 / NFR-INT-001)
+- **W-001**: promote `message received` and `write success` log events from DEBUG to INFO in `mqtt_client.py` (FR-006 warn)
+- **W-002**: make MQTT topic filter configurable via `config.json` instead of hardcoded `"environment/#"` in `mqtt_client.py:62` (FR-008 warn)
+- **RISK-003**: upgrade Python 3.10 → 3.11+ before October 2026 EOL
+- **RISK-012**: evaluate RedMatic startup zero suppression (OI-004)
+- **RISK-015**: configure BIOS power-restore on sietchtabr (OI-001)
 
 ### Architecture status — COMPLETE (2026-05-10)
 
@@ -59,7 +64,10 @@ config.json                   # Deployment config (gitignored — edit on sietch
 config.json.example           # Template with all supported keys including heartbeat_url
 docker-compose.yml            # All services: mqtt, mqtt_logger, mariadb,
                               # uptime_kuma (OPT-A), ntfy, companion_monitor (OPT-B)
-specs/002-mqttlogger-baseline/ # SE artifacts for current feature
+db/
+  initial-schema.sql            # Version-controlled DDL artifact (generated from data_model.py)
+specs/system/                   # Living SE artifacts (RTM, risk register, V&V plan/results, architecture, etc.)
+specs/005-schema-audit/         # Feature SE artifacts (gate reports, tasks, plan, explore)
 ```
 
 ## Stack on sietchtabr
