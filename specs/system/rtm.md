@@ -1,10 +1,10 @@
 # Requirements Traceability Matrix
 
 **System:** mqttlogger
-**Feature:** 004-remove-init-legacy (reviewed; originally 002-mqttlogger-baseline)
-**Date:** 2026-05-12
-**Status:** DRAFT — updated by feature 004 architecture review
-**Last Updated By:** se-architecture skill (feature 004)
+**Feature:** 007-python312-upgrade (updated; previously 004-remove-init-legacy / 002-mqttlogger-baseline)
+**Date:** 2026-05-16
+**Status:** DRAFT — updated by feature 007
+**Last Updated By:** se-requirements skill (2026-05-16)
 
 ---
 
@@ -85,6 +85,17 @@ Maps every requirement to its source artifact, the architectural element that im
 | Req ID | Short Description | Source Need | Design Element | V&V Method | V&V Stage | Status |
 | ------ | ----------------- | ----------- | -------------- | ---------- | --------- | ------ |
 | FR-022 | No dead code in mqttlogger/__init__.py | NFR-MAIN-001, NEED-STK-001-007 | `mqttlogger/__init__.py` (emptied) | I | — | Implemented — Task: T002, T007 (feature-004) |
+
+---
+
+## Section 5 — Python 3.12 Runtime Upgrade (FR-023 through FR-026)
+
+| Req ID | Short Description | Source Need | Design Element | V&V Method | V&V Stage | Status |
+| ------ | ----------------- | ----------- | -------------- | ---------- | --------- | ------ |
+| FR-023 | Python 3.12 base image — main app | RISK-003, NEED-STK-001-004 | `Dockerfile` (FROM line) | I | — | Implemented — T004 (007); commit 3f90084 |
+| FR-024 | Python 3.12 base image — companion monitor | RISK-003, NEED-STK-001-004 | `companion-monitor/Dockerfile` (FROM line) | I | — | Implemented — T005 (007); commit 3f90084 |
+| FR-025 | CI pipeline executes on Python 3.12 | RISK-003, NFR-MAIN-001 | `.github/workflows/ci.yml` (both `python-version` entries) | I+T | IT | Implemented — T006 (007); commit 3f90084; CI green PR #9/#10 |
+| FR-026 | Python 3.12-compatible dependency pins | RISK-003, NEED-STK-001-004 | `requirements.txt` (greenlet, SQLAlchemy, mysqlclient pins) | I+T | IT | Implemented — T001–T003 (007); commits 3f90084, 1b7fac2 |
 
 ---
 

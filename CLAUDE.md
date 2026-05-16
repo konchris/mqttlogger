@@ -10,6 +10,7 @@ Home automation sensor logger. HomeMatic IP sensors publish via CCU3/RedMatic ov
 - **`003-cicd-pipeline`** — CI/CD pipeline. **CLOSED — merged to main 2026-05-10.**
 - **`004-remove-init-legacy`** — removed dead code from `mqttlogger/__init__.py`. **CLOSED — merged to main 2026-05-16.**
 - **`005-schema-audit`** — schema reference document + `db/initial-schema.sql`. **CLOSED — merged to main 2026-05-16.**
+- **`007-python312-upgrade`** — Python 3.10 → 3.12 runtime upgrade. **CLOSED — merged to main 2026-05-16.**
 
 ---
 
@@ -19,7 +20,6 @@ No active feature branch. Next candidates:
 
 - **W-001**: promote `message received` and `write success` log events from DEBUG to INFO in `mqtt_client.py` (FR-006 warn)
 - **W-002**: make MQTT topic filter configurable via `config.json` instead of hardcoded `"environment/#"` in `mqtt_client.py:62` (FR-008 warn)
-- **RISK-003**: upgrade Python 3.10 → 3.11+ before October 2026 EOL
 - **RISK-012**: evaluate RedMatic startup zero suppression (OI-004)
 - **RISK-015**: configure BIOS power-restore on sietchtabr (OI-001)
 
@@ -44,7 +44,8 @@ No active feature branch. Next candidates:
 - RISK-020: heartbeat proves liveness, not capture activity (ADR-006 consequence)
 - RISK-023: ntfy is LAN-only — operator off home network misses notifications
 
-RISK-001 (no CI/CD) and RISK-024 (no automated tests for companion_monitor) — **CLOSED** by 003-cicd-pipeline.
+RISK-001 (no CI/CD) — **CLOSED** by 003-cicd-pipeline.
+RISK-024 (no automated tests for companion_monitor) — **Carried Forward** to a future iteration.
 
 ## Repository layout
 

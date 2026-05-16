@@ -1,10 +1,10 @@
 # Requirements Register
 
 **System:** mqttlogger
-**Feature:** 004-remove-init-legacy (updated; originally 002-mqttlogger-baseline)
-**Date:** 2026-05-12
-**Status:** PASS WITH WARNINGS — quality gate passed; see req-quality-report.md
-**Last Updated By:** se-req-quality skill
+**Feature:** 007-python312-upgrade (updated; previously 004-remove-init-legacy / 002-mqttlogger-baseline)
+**Date:** 2026-05-16
+**Status:** DRAFT — Section 5 added for feature 007; prior sections unchanged
+**Last Updated By:** se-requirements skill (2026-05-16)
 
 ---
 
@@ -245,7 +245,7 @@ These requirements describe the passive monitoring capability added by the OPT-A
 
 **Statement:** The monitoring system shall track alert state in memory so that each alert fires exactly once on transition (normal → alert, alert → normal), not on every polling cycle.
 
-**Source:** OPT-B design, NEED-STK-001-002 (failures must surface visibly, not flood)
+**Source:** OPT-B design, NEED-STK-001-002
 **Priority:** Must Have
 **Verification Method:** Test (IT) — sustain a sensor silence for multiple poll cycles; verify exactly one alert notification is sent; verify one recovery notification on resume
 **Status:** Implemented (in-memory sets `alerted_missing`, `alerted_unknown` in monitor.py)
@@ -302,6 +302,10 @@ These requirements describe the passive monitoring capability added by the OPT-A
 | FR-MON-006 | — | — | NFR-PORT-001 | Implemented |
 | FR-MON-007 | — | — | NFR-SEC-001 | Implemented |
 | FR-022 | — | — | NFR-MAIN-001 | Implemented |
+| FR-023 | — | RISK-003 | NFR-PORT-001 | Planned |
+| FR-024 | — | RISK-003 | NFR-PORT-001 | Planned |
+| FR-025 | — | RISK-003 | NFR-MAIN-001 | Planned |
+| FR-026 | — | RISK-003 | — | Planned |
 
 ---
 
@@ -326,11 +330,15 @@ These requirements describe the passive monitoring capability added by the OPT-A
 | FR-MON-001 | PASS | |
 | FR-MON-002 | PASS | |
 | FR-MON-003 | PASS | |
-| FR-MON-004 | PASS WITH WARNINGS | Unambiguous: rewritten to resolve grammatical ambiguity |
-| FR-MON-005 | PASS WITH WARNINGS | Necessary: NEED-STK-001-002 added as co-source |
+| FR-MON-004 | PASS | Unambiguous WARN resolved 2026-05-16 — requirement rewritten |
+| FR-MON-005 | PASS | Necessary WARN resolved 2026-05-16 — NEED-STK-001-002 co-source added |
 | FR-MON-006 | PASS WITH WARNINGS | Singular: two sentences for same LAN-only constraint (acceptable) |
 | FR-MON-007 | PASS WITH WARNINGS | Singular: positive+negative form of same principle (acceptable) |
 | FR-022 | PASS | |
+| FR-023 | PASS WITH WARNINGS | Singular: two-sentence goal+mechanism (acceptable) |
+| FR-024 | PASS WITH WARNINGS | Singular: two-sentence goal+mechanism (acceptable) |
+| FR-025 | PASS WITH WARNINGS | Singular: two-sentence goal+mechanism (acceptable) |
+| FR-026 | PASS WITH WARNINGS | Singular: three-package constraint (acceptable) |
 
 ---
 
@@ -349,6 +357,64 @@ Requirements derived from NFR-MAIN-001 and the 004-remove-init-legacy feature. N
 **Verification Method:** Inspection — verify `mqttlogger/__init__.py` contains no callable definitions; confirm zero callers for any definition found via codebase search
 **IEEE 29148 Quality:** PASS on all 8 attributes
 **Status:** Implemented
+
+---
+
+## Section 5 — Python 3.12 Runtime Upgrade (Feature 007)
+
+Requirements derived from RISK-003 (Python 3.10 EOL October 2026), NFR-PORT-001, and NFR-MAIN-001. No new operational scenarios — the upgrade touches only build/CI artefacts; the running system behaviour is unchanged.
+
+---
+
+### FR-023 — Main App Python 3.12 Runtime
+
+**Statement:** The main application container image shall use Python 3.12 as its base runtime. The `Dockerfile` shall specify `FROM python:3.12-slim` as its base image.
+
+**Source:** RISK-003, NFR-PORT-001
+**Traced Need:** NEED-STK-001-004
+**Priority:** Must Have
+**Verification Method:** Inspection — verify `Dockerfile` first line is `FROM python:3.12-slim`
+**IEEE 29148 Quality:** PASS on all 8 attributes
+**Status:** Implemented — commit 3f90084 (007)
+
+---
+
+### FR-024 — Companion Monitor Python 3.12 Runtime
+
+**Statement:** The companion monitor container image shall use Python 3.12 as its base runtime. The `companion-monitor/Dockerfile` shall specify `FROM python:3.12-slim` as its base image.
+
+**Source:** RISK-003, NFR-PORT-001
+**Traced Need:** NEED-STK-001-004
+**Priority:** Must Have
+**Verification Method:** Inspection — verify `companion-monitor/Dockerfile` first line is `FROM python:3.12-slim`
+**IEEE 29148 Quality:** PASS on all 8 attributes
+**Status:** Implemented — commit 3f90084 (007)
+
+---
+
+### FR-025 — CI Pipeline Python 3.12 Alignment
+
+**Statement:** The CI pipeline shall execute all lint, test, and coverage jobs using Python 3.12. All `python-version` entries in `.github/workflows/ci.yml` shall specify `"3.12"`.
+
+**Source:** RISK-003, NFR-MAIN-001
+**Traced Need:** NEED-STK-001-004
+**Priority:** Must Have
+**Verification Method:** Inspection + Test — verify `ci.yml` `python-version` entries specify `"3.12"`; CI lint and test+coverage jobs pass on Python 3.12
+**IEEE 29148 Quality:** PASS on all 8 attributes
+**Status:** Implemented — commit 3f90084 (007); CI green on Python 3.12 (PR #9, PR #10)
+
+---
+
+### FR-026 — Python 3.12-Compatible Dependency Pins
+
+**Statement:** All Python packages in `requirements.txt` shall be pinned to versions that support Python 3.12. The following minimum versions shall be satisfied: `greenlet >= 3.0.0`, `SQLAlchemy >= 1.4.50`, and `mysqlclient >= 2.2.0`. All other existing pins shall remain unchanged unless upgrading them is required to achieve Python 3.12 compatibility.
+
+**Source:** RISK-003, Constitution Development Workflow Rule 5
+**Traced Need:** NEED-STK-001-004
+**Priority:** Must Have
+**Verification Method:** Inspection + Test — verify `requirements.txt` satisfies the stated minimums; CI passes with updated pins on Python 3.12
+**IEEE 29148 Quality:** PASS WITH WARNINGS — Singular: three package constraints stated in one requirement; all serve the single Python 3.12 compatibility obligation (acceptable per FR-003/FR-007 precedent)
+**Status:** Implemented — commit 3f90084 (007); pkg-config fix 1b7fac2 (007)
 
 ---
 
