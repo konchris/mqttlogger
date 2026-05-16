@@ -10,16 +10,18 @@ Home automation sensor logger. HomeMatic IP sensors publish via CCU3/RedMatic ov
 - **`003-cicd-pipeline`** — CI/CD pipeline. **CLOSED — merged to main 2026-05-10.**
 - **`004-remove-init-legacy`** — removed dead code from `mqttlogger/__init__.py`. **CLOSED — merged to main 2026-05-16.**
 - **`005-schema-audit`** — schema reference document + `db/initial-schema.sql`. **CLOSED — merged to main 2026-05-16.**
+- **`007-python312-upgrade`** — Python 3.10 → 3.12 runtime upgrade. **IN PROGRESS — branch `feature/007-python312-upgrade`.**
 
 ---
 
 ## Current state
 
-No active feature branch. Next candidates:
+Active feature: **`007-python312-upgrade`** — branch `feature/007-python312-upgrade`. Addresses RISK-003 (Python 3.10 EOL October 2026). Changes: `requirements.txt` (greenlet, SQLAlchemy, mysqlclient pins), `Dockerfile`, `companion-monitor/Dockerfile`, `.github/workflows/ci.yml`.
+
+Next candidates (after 007 merges):
 
 - **W-001**: promote `message received` and `write success` log events from DEBUG to INFO in `mqtt_client.py` (FR-006 warn)
 - **W-002**: make MQTT topic filter configurable via `config.json` instead of hardcoded `"environment/#"` in `mqtt_client.py:62` (FR-008 warn)
-- **RISK-003**: upgrade Python 3.10 → 3.11+ before October 2026 EOL
 - **RISK-012**: evaluate RedMatic startup zero suppression (OI-004)
 - **RISK-015**: configure BIOS power-restore on sietchtabr (OI-001)
 

@@ -1,10 +1,10 @@
 # Requirements Quality Report
 
 **System:** mqttlogger
-**Feature:** 004-remove-init-legacy (registers reviewed include all requirements through feature 004)
-**Date:** 2026-05-12
+**Feature:** 007-python312-upgrade (updated; includes all requirements through feature 007)
+**Date:** 2026-05-16
 **Status:** PASS WITH WARNINGS
-**Last Updated By:** se-req-quality skill
+**Last Updated By:** se-req-quality skill (2026-05-16)
 
 ---
 
@@ -12,22 +12,23 @@
 
 | Metric | Count |
 | ------ | ----- |
-| Total requirements checked | 22 |
-| Requirements fully passing (clean PASS) | 8 |
-| Requirements with WARNs only | 14 |
+| Total requirements checked | 26 |
+| Requirements fully passing (clean PASS) | 10 |
+| Requirements with WARNs only | 16 |
 | Requirements with FAILs | 0 |
 | Coverage gaps (needs without requirements) | 0 |
 
 **Overall Result: PASS WITH WARNINGS**
 
-All 22 requirements are traceable to a stakeholder need or NFR, verifiable by a feasible method,
+All 26 requirements are traceable to a stakeholder need or NFR, verifiable by a feasible method,
 unambiguous in intent, internally consistent, and feasibly implemented. No requirement fails any
-of the eight IEEE 29148 quality attributes. Fourteen requirements carry Singular warnings — a
+of the eight IEEE 29148 quality attributes. Sixteen requirements carry Singular warnings — a
 recurring pattern where a single requirement contains two closely related, causally inseparable
-clauses. These do not block Phase 2 closure but are recorded for future refactoring. Two
-requirements carry non-Singular warnings that are higher priority: FR-006 (Complete: event count
-inconsistency — 7 listed, verification references 8) and FR-MON-004 (Unambiguous: grammatical
-ambiguity in the trigger condition). Both are documented with rewrite suggestions below.
+clauses. These do not block Phase 2 closure. Two previously open non-Singular warnings have been
+resolved in this update: FR-MON-004 (Unambiguous — grammatical ambiguity, requirement rewritten)
+and FR-MON-005 (Necessary — NEED-STK-001-002 co-source added). Four new requirements (FR-023
+through FR-026) were added for feature 007-python312-upgrade and assessed in this run; all carry
+only Singular warnings.
 
 ---
 
@@ -46,6 +47,8 @@ The following requirements satisfy all eight quality attributes without qualific
 | FR-MON-001 | Crash notification ≤ 120 s after heartbeat silence |
 | FR-MON-002 | Periodic sensor silence alert |
 | FR-MON-003 | Sensor recovery notification |
+| FR-MON-004 | Unknown sensor detection (rewritten 2026-05-16 — Unambiguous WARN resolved) |
+| FR-MON-005 | Alert state transition logic (NEED-STK-001-002 co-source added 2026-05-16 — Necessary WARN resolved) |
 | FR-022 | No dead code in mqttlogger/__init__.py |
 
 ---
@@ -250,25 +253,18 @@ no heartbeat URL is configured, the heartbeat shall be silently skipped."
 
 ### FR-MON-004 — Unknown Sensor Detection
 
-**Full Text:** "The monitoring system shall notify the operator when a sensor publishes readings
-to the database that is not present in the known sensor configuration and is not on the excluded
-(event-driven) sensors list."
+**Full Text (rewritten 2026-05-16):** "The monitoring system shall notify the operator when a sensor whose topic is not present in the known sensor configuration and is not listed in the excluded (event-driven) sensors list publishes readings to the database."
 
 | Attribute | Result | Finding |
 | --------- | ------ | ------- |
 | Necessary | PASS | Traces to OPT-B, RISK-013 |
-| Unambiguous | WARN | **"a sensor publishes readings to the database that is not present"** — the relative clause "that is not present" is grammatically ambiguous: does it modify "readings" or "sensor"? The intent (sensor not in config) is clear from context, but a strict reading could interpret it as "readings that are not present" — which is nonsensical. Low severity; intent is recoverable from context and validated test evidence. |
+| Unambiguous | PASS | **RESOLVED 2026-05-16** — "whose topic" unambiguously modifies "sensor"; relative clause ambiguity from prior version eliminated |
 | Verifiable | PASS | D (ST): allow new sensor to publish; verify alert within one poll cycle |
 | Consistent | PASS | No conflicts |
 | Complete | PASS | Positive condition (not in config) and negative condition (not on excluded list) both stated |
 | Singular | PASS | One detection event, one response |
 | Feasible | PASS | Validated (IP-001: 3 dining room sensors auto-detected) |
 | Traceable | PASS | OPT-B, RISK-013 |
-
-**Rewrite Suggestion (to resolve Unambiguous WARN):**
-"The monitoring system shall notify the operator when a sensor whose topic is not present in the
-known sensor configuration **and** is not listed in the excluded (event-driven) sensors list
-publishes readings to the database."
 
 ---
 
@@ -279,17 +275,14 @@ exactly once on transition (normal → alert, alert → normal), not on every po
 
 | Attribute | Result | Finding |
 | --------- | ------ | ------- |
-| Necessary | WARN | **Traces to "OPT-B design" rather than an explicit stakeholder need ID.** The underlying need is NEED-STK-001-002 (failures surface visibly and immediately) — a flood of duplicate alerts would violate this need's intent. The trace should be made explicit. |
+| Necessary | PASS | **RESOLVED 2026-05-16** — Source field updated to include NEED-STK-001-002 alongside "OPT-B design"; explicit stakeholder need trace now in place |
 | Unambiguous | PASS | "exactly once", "on transition", both transitions enumerated |
 | Verifiable | PASS | T (IT): sustain silence for multiple cycles; verify exactly one alert |
 | Consistent | PASS | No conflicts |
 | Complete | PASS | Covers both transitions (normal→alert, alert→normal) |
 | Singular | PASS | One behavioral property about state management |
 | Feasible | PASS | Implemented |
-| Traceable | PASS | Source documented as "OPT-B design" — explicit need trace recommended |
-
-**Recommended Action:** Update source field in requirements register to add
-`NEED-STK-001-002` as a co-source alongside "OPT-B design".
+| Traceable | PASS | Source: OPT-B design, NEED-STK-001-002 |
 
 ---
 
@@ -332,6 +325,76 @@ shall be hardcoded."
 
 ---
 
+---
+
+### FR-023 — Main App Python 3.12 Runtime
+
+**Full Text:** "The main application container image shall use Python 3.12 as its base runtime. The `Dockerfile` shall specify `FROM python:3.12-slim` as its base image."
+
+| Attribute | Result | Finding |
+| --------- | ------ | ------- |
+| Necessary | PASS | Traces to RISK-003 (Python 3.10 EOL October 2026), NEED-STK-001-004 (continuous unattended operation) |
+| Unambiguous | PASS | "Python 3.12", "`Dockerfile`", "`FROM python:3.12-slim`" — all precise and single-interpretation |
+| Verifiable | PASS | I: grep `Dockerfile` for `FROM python:3.12-slim`; binary pass/fail |
+| Consistent | PASS | No conflicts with existing requirements or NFRs; aligns with NFR-PORT-001 |
+| Complete | PASS | Goal (Python 3.12 runtime) and verification artifact (Dockerfile FROM line) both specified |
+| Singular | WARN | Two sentences: first states the goal; second specifies the implementation artifact. They are not independent — the Dockerfile FROM line is the only mechanism. Acceptable; the second sentence makes verification unambiguous. |
+| Feasible | PASS | `python:3.12-slim` is available on Docker Hub with amd64/arm64 multi-arch support |
+| Traceable | PASS | FR-023, traces to RISK-003, NEED-STK-001-004 |
+
+---
+
+### FR-024 — Companion Monitor Python 3.12 Runtime
+
+**Full Text:** "The companion monitor container image shall use Python 3.12 as its base runtime. The `companion-monitor/Dockerfile` shall specify `FROM python:3.12-slim` as its base image."
+
+| Attribute | Result | Finding |
+| --------- | ------ | ------- |
+| Necessary | PASS | Traces to RISK-003, NEED-STK-001-004; companion monitor runs on a Python runtime that is independent of the main app |
+| Unambiguous | PASS | Specific file path and FROM value stated |
+| Verifiable | PASS | I: grep `companion-monitor/Dockerfile` for `FROM python:3.12-slim`; binary pass/fail |
+| Consistent | PASS | No conflicts; aligns with FR-023 (same upgrade obligation for both containers) |
+| Complete | PASS | Goal and artifact both specified; no TBDs |
+| Singular | WARN | Same two-sentence pattern as FR-023; acceptable for same reason |
+| Feasible | PASS | Same base image as FR-023 |
+| Traceable | PASS | FR-024, traces to RISK-003, NEED-STK-001-004 |
+
+---
+
+### FR-025 — CI Pipeline Python 3.12 Alignment
+
+**Full Text:** "The CI pipeline shall execute all lint, test, and coverage jobs using Python 3.12. All `python-version` entries in `.github/workflows/ci.yml` shall specify `"3.12"`."
+
+| Attribute | Result | Finding |
+| --------- | ------ | ------- |
+| Necessary | PASS | Traces to RISK-003, NFR-MAIN-001; CI must validate on the runtime the containers use — divergence would make test results non-representative |
+| Unambiguous | PASS | "all lint, test, and coverage jobs", "all `python-version` entries", `"3.12"` — all precise |
+| Verifiable | PASS | I: verify `ci.yml` entries; T: CI jobs pass on Python 3.12 |
+| Consistent | PASS | Aligns with NFR-MAIN-001 (80% coverage gate) and FR-023/FR-024 (Python 3.12 runtime) |
+| Complete | PASS | Covers all jobs ("all entries"); no TBDs |
+| Singular | WARN | Two sentences: goal + mechanism. Same acceptable pattern as FR-023/FR-024 |
+| Feasible | PASS | `setup-python@v5` in GitHub Actions supports Python 3.12 |
+| Traceable | PASS | FR-025, traces to RISK-003, NFR-MAIN-001 |
+
+---
+
+### FR-026 — Python 3.12-Compatible Dependency Pins
+
+**Full Text:** "All Python packages in `requirements.txt` shall be pinned to versions that support Python 3.12. The following minimum versions shall be satisfied: `greenlet >= 3.0.0`, `SQLAlchemy >= 1.4.50,<2.0`, and `mysqlclient >= 2.2.0`. All other existing pins shall remain unchanged unless upgrading them is required to achieve Python 3.12 compatibility."
+
+| Attribute | Result | Finding |
+| --------- | ------ | ------- |
+| Necessary | PASS | Traces to RISK-003, NEED-STK-001-004; without compatible dependency pins the containers cannot be built on Python 3.12 |
+| Unambiguous | PASS | Package names and version constraints are explicit; "remain unchanged unless required" has clear intent (minimum-change principle) |
+| Verifiable | PASS | I: inspect `requirements.txt` for specified minimum versions; T: CI passes on Python 3.12 with the updated pins |
+| Consistent | PASS | Aligns with Constitution Development Workflow Rule 5 (pinned versions in requirements.txt) |
+| Complete | PASS | Three specific packages named with minimum versions; "all other pins unchanged" closes the scope |
+| Singular | WARN | Three package constraints stated in one requirement — all serve the single Python 3.12 compatibility obligation. Per FR-003/FR-004/FR-007 precedent, combining causally inseparable obligations is acceptable |
+| Feasible | PASS | greenlet 3.0.0, SQLAlchemy 1.4.50, mysqlclient 2.2.0 all exist on PyPI and support Python 3.12 |
+| Traceable | PASS | FR-026, traces to RISK-003, NEED-STK-001-004, Constitution Development Workflow Rule 5 |
+
+---
+
 ## Coverage Gaps
 
 None. All 14 stakeholder needs (NEED-STK-001-001 through NEED-STK-002-003) are covered by at
@@ -353,11 +416,13 @@ None. No requirements fail any quality attribute.
 
 ### Should Fix Before Phase 3 (WARN items worth addressing)
 
-| REQ-ID | Attribute | Concern | Recommendation |
-| ------ | --------- | ------- | -------------- |
-| FR-006 | Complete | ~~Lists 7 lifecycle events; V&V plan references "8 event types" — inconsistency~~ **RESOLVED at Phase 2 gate: V&V plan corrected to 7 event types.** | |
-| FR-MON-004 | Unambiguous | "a sensor publishes readings that is not present" — grammatical ambiguity about what the relative clause modifies | Rewrite as: "…when a sensor **whose topic** is not present in the known sensor configuration and is not listed in the excluded sensors list…" |
-| FR-MON-005 | Necessary | Traces to "OPT-B design"; no explicit NEED-ID | Add `NEED-STK-001-002` as co-source in requirements register |
+| REQ-ID | Attribute | Concern | Resolution |
+| ------ | --------- | ------- | ---------- |
+| FR-006 | Complete | ~~Lists 7 lifecycle events; V&V plan references "8 event types" — inconsistency~~ | **RESOLVED** — V&V plan corrected to 7 event types |
+| FR-MON-004 | Unambiguous | ~~"a sensor publishes readings that is not present" — grammatical ambiguity~~ | **RESOLVED 2026-05-16** — requirement rewritten; "whose topic" now unambiguously modifies "sensor" |
+| FR-MON-005 | Necessary | ~~Traces to "OPT-B design"; no explicit NEED-ID~~ | **RESOLVED 2026-05-16** — NEED-STK-001-002 added as co-source in requirements register |
+
+No open "Should Fix" items remain.
 
 ### Acceptable WARNs (low priority, no action required)
 
@@ -365,3 +430,7 @@ The Singular WARNs on FR-003, FR-004, FR-005, FR-007, FR-008, FR-011, FR-012, FR
 FR-MON-006, FR-MON-007 all follow the same pattern: two closely related, causally inseparable
 clauses in one requirement. This is a common and accepted pattern in system-level requirements
 where splitting would reduce rather than improve clarity. No refactoring required.
+
+The Singular WARNs on FR-023, FR-024, FR-025, FR-026 follow the same two-sentence goal+mechanism
+pattern. All four new requirements for feature 007-python312-upgrade carry only this acceptable
+warning. No refactoring required.
