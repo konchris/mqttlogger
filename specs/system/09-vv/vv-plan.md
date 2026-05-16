@@ -81,10 +81,10 @@ A requirement without a verification method is incomplete by definition.
 | FR-MON-006 | FR | Local push notification — fully LAN-only path to operator device | D | AT | Block outbound internet; verify notifications arrive on operator's iPhone on home Wi-Fi (requires physical device on home network — cannot be automated) | Chris | Planned |
 | FR-MON-007 | FR | Configurable monitoring parameters via environment variables | I | — | All parameters env-var sourced; no hardcoded thresholds | Chris | Planned |
 | FR-022 | FR | No dead code in mqttlogger/__init__.py | I | — | `mqttlogger/__init__.py` contains no callable definitions; codebase search finds zero callers for any removed symbol | Chris | Implemented |
-| FR-023 | FR | Python 3.12 base image — main app Dockerfile | I | — | `Dockerfile` first line is `FROM python:3.12-slim` | Chris | Planned |
-| FR-024 | FR | Python 3.12 base image — companion monitor Dockerfile | I | — | `companion-monitor/Dockerfile` first line is `FROM python:3.12-slim` | Chris | Planned |
-| FR-025 | FR | CI pipeline executes on Python 3.12 | I+T | IT | All `python-version` entries in `ci.yml` are `"3.12"`; CI lint and test+coverage jobs pass | Chris | Planned |
-| FR-026 | FR | Python 3.12-compatible dependency pins in requirements.txt | I+T | IT | `requirements.txt` specifies greenlet ≥ 3.0.0, SQLAlchemy ≥ 1.4.50, mysqlclient ≥ 2.2.0; CI passes with updated pins on Python 3.12 | Chris | Planned |
+| FR-023 | FR | Python 3.12 base image — main app Dockerfile | I | — | `Dockerfile` first line is `FROM python:3.12-slim` | Chris | **Pass** (2026-05-16: Dockerfile inspected; `FROM python:3.12-slim` confirmed; commit 3f90084) |
+| FR-024 | FR | Python 3.12 base image — companion monitor Dockerfile | I | — | `companion-monitor/Dockerfile` first line is `FROM python:3.12-slim` | Chris | **Pass** (2026-05-16: companion-monitor/Dockerfile inspected; `FROM python:3.12-slim` confirmed; commit 3f90084) |
+| FR-025 | FR | CI pipeline executes on Python 3.12 | I+T | IT | All `python-version` entries in `ci.yml` are `"3.12"`; CI lint and test+coverage jobs pass | Chris | **Pass** (2026-05-16: ci.yml inspected; both python-version entries confirmed "3.12"; CI green PR #9 and PR #10) |
+| FR-026 | FR | Python 3.12-compatible dependency pins in requirements.txt | I+T | IT | `requirements.txt` specifies greenlet ≥ 3.0.0, SQLAlchemy ≥ 1.4.50, mysqlclient ≥ 2.2.0; CI passes with updated pins on Python 3.12 | Chris | **Pass** (2026-05-16: requirements.txt inspected; greenlet 3.5.0, SQLAlchemy 1.4.x, mysqlclient 2.2.8 resolved by pip; CI green; sietchtabr build successful) |
 
 ---
 
@@ -94,13 +94,13 @@ A requirement without a verification method is incomplete by definition.
 
 | Scenario ID | Scenario Name | Validation Event | Pass Criterion | Status |
 |-------------|---------------|------------------|----------------|--------|
-| SCN-001 | Continuous sensor capture | AT | All readings from a defined sensor published over a test period appear in DB | Planned |
+| SCN-001 | Continuous sensor capture | AT | All readings from a defined sensor published over a test period appear in DB | **Pass** (2026-05-16: new readings confirmed in MariaDB within 5 min of Python 3.12 deployment on sietchtabr) |
 | SCN-002 | Recovery after power outage | AT | After host power cycle, service restarts and resumes capture without operator action (after manual power-on) | Planned |
 | SCN-003 | Silent logger crash | AT | After container kill, service recovers within 60 seconds; gap in record bounded to recovery window | Planned |
 | SCN-004 | Misconfigured startup | AT | Each invalid config class produces a specific, actionable error message | Planned |
 | SCN-005 | Broker temporarily unavailable | AT | After broker restart, logger reconnects automatically and resumes capture | Planned |
 | SCN-006 | HomeMatic startup zeros | AT | After CCU3 restart, spurious zeros are stored (or suppressed if RedMatic mitigation applied); no service interruption | Planned |
-| SCN-007 | Planned maintenance | AT | After docker compose down/up cycle, service resumes capture; operator confirms via DB inspection | Planned |
+| SCN-007 | Planned maintenance | AT | After docker compose down/up cycle, service resumes capture; operator confirms via DB inspection | **Pass** (2026-05-16: `docker compose build && docker compose up -d` on sietchtabr; new readings in DB confirmed by operator) |
 
 ---
 

@@ -71,8 +71,8 @@ description: "Task list for 007-python312-upgrade — Python 3.10 → 3.12 runti
 
 **Purpose**: Confirm the upgrade is correct end-to-end before merging and before deploying to sietchtabr.
 
-- [ ] T009 Open PR from `feature/007-python312-upgrade` → `develop` and verify CI passes — both `Lint (ruff)` and `Test + Coverage` jobs must be green on Python 3.12; coverage must remain ≥ 80%
-- [ ] T010 Deploy to sietchtabr: `git pull && docker compose build && docker compose up -d`; verify the `mqtt_logger` container starts cleanly; confirm `docker compose exec mqtt_logger python --version` returns `Python 3.12.x`; confirm a new reading appears in the database within 5 minutes of startup
+- [x] T009 Open PR from `feature/007-python312-upgrade` → `develop` and verify CI passes — both `Lint (ruff)` and `Test + Coverage` jobs must be green on Python 3.12; coverage must remain ≥ 80%
+- [x] T010 Deploy to sietchtabr: `git pull && docker compose build && docker compose up -d`; verify the `mqtt_logger` container starts cleanly; confirm `docker compose exec mqtt_logger python --version` returns `Python 3.12.x`; confirm a new reading appears in the database within 5 minutes of startup
 
 **Checkpoint**: CI green; sietchtabr running Python 3.12; at least one reading confirmed in MariaDB post-upgrade.
 
