@@ -127,13 +127,14 @@ services:
   # --- Explore OPT-A: Grafana OSS dashboard ------------------------------------
   # Access at http://sietchtabr:3000
   # First-time setup on sietchtabr:
-  #   1. Add to .env: GRAFANA_ADMIN_PASSWORD=<password>
-  #                   GRAFANA_DB_USER=grafana_ro
+  #   1. Add to .env: GRAFANA_ADMIN_USER=admin
+  #                   GRAFANA_ADMIN_PASSWORD=<password>
+  #                   GRAFANA_DB_USER=grafana
   #                   GRAFANA_DB_PASSWORD=<password>
   #                   MYSQL_DATABASE=<your-db-name>  (already set)
   #   2. Create read-only MariaDB user (run once inside mariadb container):
-  #      CREATE USER 'grafana_ro'@'%' IDENTIFIED BY '<password>';
-  #      GRANT SELECT ON <db>.sensorreadings TO 'grafana_ro'@'%';
+  #      CREATE USER 'grafana'@'%' IDENTIFIED BY '<password>';
+  #      GRANT SELECT ON <db>.sensorreadings TO 'grafana'@'%';
   #      FLUSH PRIVILEGES;
   grafana:
     image: grafana/grafana-oss:latest
