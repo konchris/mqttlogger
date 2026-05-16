@@ -1,8 +1,8 @@
 # Concept of Operations
 
 **System:** mqttlogger
-**Feature:** 002-mqttlogger-baseline
-**Date:** 2026-05-08
+**Feature:** 008-grafana-dashboard (last updated)
+**Date:** 2026-05-16
 **Status:** DRAFT
 **Last Updated By:** se-conops skill
 
@@ -15,6 +15,8 @@ mqttlogger is a continuous, unattended data capture service that records every e
 The primary motivation for this record is energy optimisation. The household operator wants to understand how the home behaves across seasons, how specific rooms respond to renovations or temporary interventions, and whether measures taken to improve comfort or reduce energy consumption are actually working. Because cause and effect in a home environment play out over weeks and months, the value of each individual reading is not immediately apparent — it is realised later, when patterns emerge from the accumulated data. A reading that was never captured cannot be reconstructed.
 
 mqttlogger operates in the background without any user interface. It does not display information, produce reports, or control any devices. Its output is a database table, updated continuously, from which all analysis and decision-making flows.
+
+Feature 008 adds a Grafana dashboard as a companion service in the same Docker Compose stack. The dashboard provides a browser-accessible view of the historical sensor data stored in MariaDB. It does not capture data, control devices, or alter the database in any way — it is a read-only window into the record that mqttlogger builds. The dashboard enables the operator to answer questions such as "how hot was the attic last Tuesday afternoon" in under a minute, without writing SQL queries directly against the database.
 
 ---
 
@@ -48,7 +50,7 @@ mqttlogger operates in the background without any user interface. It does not di
 |--------|------|-------|
 | MariaDB database | Persistence target | Receives and stores every captured reading; co-hosted on the same mini PC |
 | Jupyter notebooks | Ad-hoc analysis | Reads from MariaDB for exploratory data analysis; not a real-time consumer |
-| Future dashboard | Planned downstream consumer | Not yet designed; expected to read from MariaDB |
+| Grafana dashboard | Visualisation consumer | Reads from MariaDB via a read-only datasource connection; co-hosted on the same mini PC; browser-accessible on the home LAN; feature 008 |
 | Operator notification device (iPhone) | Alert recipient | Receives push notifications from the self-hosted ntfy server via the home LAN; the ntfy app connects directly to the LAN IP of the ntfy container — **notification delivery requires the device to be on the home network**. Off-network delivery (operator away from home) is not currently supported. See RISK-023. |
 
 ### Operational Constraints
@@ -82,6 +84,9 @@ Full profiles are in `specs/002-mqttlogger-baseline/00-stakeholders/`. Summary o
 | MODE-005 | Degraded — Database Unavailable | Database write fails during MODE-001 | The failed message is logged and discarded; operation continues; subsequent messages are processed normally; no buffering occurs | Database write succeeds on next attempt; MODE-001 continues | None — data loss during DB outage is accepted by design |
 | MODE-006 | Degraded — Upstream Noise | CCU3/RedMatic restarts and floods broker with startup zeros | Logger continues normal operation; all messages including physically impossible zero values are captured and stored; spurious records enter the dataset | Startup zero flood ceases; normal sensor readings resume | None — spurious data is a known upstream behaviour; mitigation is on the HomeMatic side |
 | MODE-007 | Maintenance | Operator initiates deliberate downtime | Operator stops the Docker Compose stack, applies changes (code update, configuration change, dependency upgrade, image rebuild), and restarts the stack | Stack restarted and MODE-002 entered | None — all readings during maintenance window are permanently lost |
+| MODE-008 | Dashboard Startup | sietchtabr boots or Docker Compose stack starts | Grafana container initialises; datasource connection to MariaDB is established; dashboards become available in the browser | Grafana HTTP endpoint responds and datasource is healthy | None |
+| MODE-009 | Dashboard Normal Operation | MODE-008 complete | Operator browses sensor data via browser; time-range filtering, panel inspection, and ad-hoc queries are all available; no writes to the database | Stack shutdown or loss of MariaDB connection | None |
+| MODE-010 | Dashboard Degraded — Database Unavailable | MariaDB connection lost while Grafana is running | Grafana is reachable in the browser but panels display a datasource error; no historical data is shown; Grafana recovers automatically when MariaDB becomes available again | MariaDB connection re-established; panels resume showing data without operator intervention | None |
 
 ---
 
@@ -96,6 +101,10 @@ Full profiles are in `specs/002-mqttlogger-baseline/00-stakeholders/`. Summary o
 | SC-CONOPS-005 | The service recovers from broker outage without operator intervention | Reconnection achieved automatically; no operator action required | STK-001 |
 | SC-CONOPS-006 | The service exits cleanly when stopped | Exit within 10 seconds of stop signal; no orphaned broker connections; no partial database writes | STK-001 |
 | SC-CONOPS-007 | A returning developer can re-orient to current system state within one work session | Developer can identify deployed version, understand current state, and resume productive work within one session after months-long absence | STK-002 |
+| SC-CONOPS-008 | The dashboard shows recent sensor data when opened | At least one reading from within the last hour is visible in any time range that includes the present | STK-001 |
+| SC-CONOPS-009 | The operator can answer a specific historical question without writing SQL | Operator can filter by sensor/room and time range and read a result in under one minute | STK-001 |
+| SC-CONOPS-010 | The dashboard recovers automatically after sietchtabr restarts | Grafana panels show data without any manual operator action after a power-cycle and restart | STK-001 |
+| SC-CONOPS-011 | The dashboard does not require manual refresh to show current data | No operator-initiated action is needed to see the latest readings within the normal polling cadence | STK-001 |
 
 ---
 
@@ -107,7 +116,7 @@ Full profiles are in `specs/002-mqttlogger-baseline/00-stakeholders/`. Summary o
 | OI-002 | No passive notification mechanism exists for container crash or data capture failure — SC-CONOPS-003 is unmet by current implementation | Chris | Architecture / NFR phase |
 | OI-003 | No data completeness verification mechanism — SC-CONOPS-004 is unmet by current implementation | Chris | Architecture / NFR phase |
 | OI-004 | CCU3/RedMatic "publish cached values on start" setting not yet evaluated or changed — spurious startup zeros continue to pollute the dataset | Chris | Before next active experiment window |
-| OI-005 | Future dashboard identified as downstream consumer but not yet designed — database schema changes may inadvertently break dashboard integration | Chris | Phase 3+ |
+| OI-005 | ~~Future dashboard identified as downstream consumer but not yet designed~~ **CLOSED** — Grafana dashboard is now being designed as feature 008 | Chris | **Closed 2026-05-16** |
 
 ---
 

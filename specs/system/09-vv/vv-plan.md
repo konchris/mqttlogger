@@ -1,10 +1,10 @@
 # Verification and Validation Plan
 
 **System:** mqttlogger
-**Feature:** 007-python312-upgrade (updated; previously 004-remove-init-legacy / 002-mqttlogger-baseline)
+**Feature:** 008-grafana-dashboard (last updated; previously 007 / 004 / 002)
 **Date:** 2026-05-16
-**Status:** DRAFT — updated by feature 007
-**Last Updated By:** se-requirements skill (2026-05-16)
+**Status:** DRAFT — updated by feature 008
+**Last Updated By:** se-nfr skill (2026-05-16)
 
 ---
 
@@ -50,6 +50,11 @@ A requirement without a verification method is incomplete by definition.
 | NFR-MAIN-001 | NFR | Test coverage ≥ 80% line coverage | T | UT+IT | pytest-cov reports ≥ 80% line coverage; enforcement deferred to CI/CD establishment | TBD | Planned |
 | NFR-PORT-001 | NFR | Deployable via Docker Compose on Linux amd64/arm64 | D | ST | docker compose up -d completes; logger connects, receives a test message, writes to DB | TBD | Planned |
 | NFR-INT-001 | NFR | DB schema owned by mqttlogger; all changes via migrations | I | — | Current schema fully described by version-controlled scripts; no out-of-band changes exist in the database | TBD | Planned |
+| NFR-PERF-003 | NFR | Dashboard panels render within 10 s for ≤7-day query | T | AT | All panels render with data within 10 seconds for a 7-day and 30-day time range on the home LAN | TBD | Planned |
+| NFR-REL-003 | NFR | Dashboard available within 2 min of stack startup | D | AT | Grafana HTTP endpoint responds and datasource is healthy within 2 minutes of docker compose up; no manual steps required | TBD | Planned |
+| NFR-SEC-002 | NFR | Grafana uses dedicated read-only DB user; credentials via .env | I | — | Datasource user has SELECT on sensorreadings only; write user not referenced; .env in .gitignore | TBD | Planned |
+| NFR-USE-003 | NFR | Dashboard config fully provisioned from version control | D | AT | Delete Grafana volume; docker compose up; datasource and dashboards present without manual UI steps | TBD | Planned |
+| NFR-INT-002 | NFR | Grafana queries sensorreadings only; no writes permitted | I | — | Read-only user has no write privileges; all panel queries reference sensorreadings only | TBD | Planned |
 
 ---
 

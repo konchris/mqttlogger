@@ -1,8 +1,8 @@
 # Operational Scenarios
 
 **System:** mqttlogger
-**Feature:** 002-mqttlogger-baseline
-**Date:** 2026-05-08
+**Feature:** 008-grafana-dashboard (last updated)
+**Date:** 2026-05-16
 **Status:** DRAFT
 **Last Updated By:** se-conops skill
 
@@ -19,6 +19,11 @@
 | SCN-005 | Broker temporarily unavailable | Degraded Operation | STK-001 | High |
 | SCN-006 | HomeMatic/CCU3 restart — spurious zero flood | Degraded Operation | STK-001 | Medium |
 | SCN-007 | Planned maintenance update | Maintenance | STK-001 / STK-002 | Medium |
+| SCN-008 | Browse historical sensor data | Normal Success | STK-001 | High |
+| SCN-009 | Dashboard recovery after power outage | Alternative Success | STK-001 | High |
+| SCN-010 | Time range returns no data | Operator Error | STK-001 | Medium |
+| SCN-011 | Grafana cannot connect to database | System Failure | STK-001 | High |
+| SCN-012 | Database temporarily unavailable mid-session | Degraded Operation | STK-001 | Medium |
 
 ---
 
@@ -219,3 +224,137 @@
 **Consequences of Failure:** Extended data gap; or a silent non-capture state post-maintenance that goes undetected.
 
 **Notes:** STK-002 perspective: after a long absence, step 2 must be preceded by re-orientation (reading quick-start doc, identifying deployed version, checking backlog). Without these artefacts, the maintenance session begins with context reconstruction rather than productive action. Relates to NEED-STK-002-001, NEED-STK-002-002.
+
+---
+
+### SCN-008 — Browse Historical Sensor Data
+
+**Type:** Normal Success
+**Primary Stakeholder:** STK-001
+**Precondition:** All services are running (logger, database, Grafana); sensor readings are present in the database.
+
+**Scenario Steps:**
+
+1. The operator opens a browser on any device connected to the home LAN and navigates to the Grafana URL (e.g. `http://sietchtabr:3000`).
+2. The Grafana home dashboard loads, showing available panels.
+3. The operator selects a time range of interest (e.g. last 7 days, or a specific date range).
+4. The operator navigates to a panel or dashboard showing a specific sensor or room (e.g. attic temperature).
+5. The panel queries MariaDB and renders the historical readings as a time-series graph.
+6. The operator reads the data and draws a conclusion (e.g. "the attic reached 38°C on three afternoons last week").
+
+**Successful Outcome:** The operator answers a specific question about historical sensor data in under one minute without writing any SQL.
+
+**Failure Modes Within This Scenario:**
+- Step 5: Panel loads but shows no data for the selected range — operator may not realise the time range predates available data (see SCN-010).
+- Step 5: Panel shows data that appears incorrect — data quality issue in the underlying record (spurious zeros from CCU3 restart; see SCN-006).
+
+**Consequences of Failure:** Operator cannot answer the question; falls back to direct SQL query. No data loss — the dashboard is read-only.
+
+**Notes:** Directly satisfies NEED-STK-001-010 and SC-CONOPS-009. Relates to OI-005 (now closed).
+
+---
+
+### SCN-009 — Dashboard Recovery After Power Outage
+
+**Type:** Alternative Success
+**Primary Stakeholder:** STK-001
+**Precondition:** sietchtabr has lost power and been manually powered back on; Docker Compose has restarted all containers.
+
+**Scenario Steps:**
+
+1. Power is restored; the operator powers on sietchtabr.
+2. Docker Compose starts all containers: MariaDB, Mosquitto, mqtt_logger, Grafana.
+3. Grafana starts and attempts to connect to MariaDB. MariaDB may still be initialising.
+4. Grafana retries the datasource connection until MariaDB is ready.
+5. Once MariaDB is healthy, Grafana datasource becomes active.
+6. The operator opens a browser and navigates to the Grafana URL.
+7. Panels load and show historical data up to the point before the outage. No operator action beyond opening the browser is required.
+
+**Successful Outcome:** The dashboard is accessible and shows historical data without any manual configuration or restart steps after the host comes back online.
+
+**Failure Modes Within This Scenario:**
+- MariaDB takes longer than Grafana's connection timeout to initialise — Grafana marks datasource as failed and does not retry automatically; operator must restart the Grafana container.
+- The operator opens the browser before MariaDB is ready and sees a datasource error — refreshing the browser after a short wait resolves it.
+
+**Consequences of Failure:** Dashboard temporarily unavailable post-restart; operator must manually intervene to restore it. No data loss — dashboard is read-only.
+
+**Notes:** Relates to SC-CONOPS-010. Container startup ordering in Docker Compose should use a health check dependency on MariaDB to prevent the primary failure mode above.
+
+---
+
+### SCN-010 — Time Range Returns No Data
+
+**Type:** Operator Error
+**Primary Stakeholder:** STK-001
+**Precondition:** Dashboard is running normally; operator selects a time range.
+
+**Scenario Steps:**
+
+1. The operator sets a time range in Grafana (e.g. "last 30 days" — but the logger was only deployed 10 days ago, or the operator accidentally selects a future date range).
+2. The panel query returns zero rows from MariaDB.
+3. Grafana displays empty panels or a "No data" message.
+4. The operator realises the selected time range contains no readings and adjusts it.
+
+**Successful Outcome:** The operator adjusts the time range and data appears as expected.
+
+**Failure Modes Within This Scenario:**
+- The operator interprets empty panels as a system failure rather than an empty time range — unnecessary investigation is triggered.
+- The time range covers a genuine gap in the record (e.g. a logger outage period) — the operator cannot distinguish "no data was captured" from "wrong time range selected."
+
+**Consequences of Failure:** Wasted investigation time. No data loss or system harm.
+
+**Notes:** Clear "No data" messaging in panels reduces confusion. A visible panel annotation for known outage periods would mitigate the gap-vs-range ambiguity, but is not in scope for feature 008.
+
+---
+
+### SCN-011 — Grafana Cannot Connect to Database
+
+**Type:** System Failure
+**Primary Stakeholder:** STK-001
+**Precondition:** Grafana is running; MariaDB is unavailable or the datasource credentials are incorrect.
+
+**Scenario Steps:**
+
+1. The operator opens the browser and navigates to the Grafana URL.
+2. Grafana loads the dashboard UI but panels fail to render data.
+3. Panels display a datasource error (e.g. "Error: failed to query data" or a connection refused message).
+4. The operator inspects the Grafana datasource settings or container logs to identify the cause.
+5a. (Credentials wrong) Operator corrects the datasource configuration and panels recover.
+5b. (MariaDB unavailable) Operator investigates MariaDB container status and resolves the underlying fault.
+
+**Successful Outcome:** The operator identifies the cause from the error message, resolves it, and panels return to showing data.
+
+**Failure Modes Within This Scenario:**
+- The error message is not actionable — operator cannot determine whether the fault is credentials, network, or MariaDB being down.
+- The operator does not notice the error (e.g. checking a panel on a mobile device where the error is not prominently displayed).
+
+**Consequences of Failure:** Dashboard is unavailable for data access. No data loss — dashboard is read-only. Underlying mqttlogger capture may or may not be affected depending on whether the MariaDB fault is the cause.
+
+**Notes:** Relates to SC-CONOPS-008. Grafana datasource configuration must use a dedicated read-only database user, not the mqttlogger write user, to limit blast radius of credential exposure (see RISK-027).
+
+---
+
+### SCN-012 — Database Temporarily Unavailable Mid-Session
+
+**Type:** Degraded Operation
+**Primary Stakeholder:** STK-001
+**Precondition:** The operator is actively browsing the dashboard; MariaDB becomes temporarily unavailable (e.g. during a Docker Compose restart of MariaDB only).
+
+**Scenario Steps:**
+
+1. The operator is viewing panels in the browser.
+2. MariaDB becomes unavailable mid-session.
+3. Subsequent panel refreshes or time-range changes return datasource errors.
+4. The operator notices the error state.
+5. MariaDB recovers (automatically, e.g. after a container restart completes).
+6. Grafana datasource reconnects automatically.
+7. The operator refreshes the browser; panels return to showing data.
+
+**Successful Outcome:** Grafana recovers automatically once MariaDB is back, requiring only a browser refresh from the operator.
+
+**Failure Modes Within This Scenario:**
+- Grafana does not recover automatically — operator must manually restart the Grafana container.
+
+**Consequences of Failure:** Brief dashboard unavailability. No data loss.
+
+**Notes:** Relates to MODE-010 (Dashboard Degraded). Automatic recovery on datasource reconnect is standard Grafana behaviour and is not expected to require configuration.

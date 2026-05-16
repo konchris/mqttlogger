@@ -124,6 +124,59 @@ services:
     restart: unless-stopped
     logging: *default-logging
 
+  # --- Explore OPT-A: Grafana OSS dashboard ------------------------------------
+  # Access at http://sietchtabr:3000
+  # First-time setup on sietchtabr:
+  #   1. Add to .env: GRAFANA_ADMIN_PASSWORD=<password>
+  #                   GRAFANA_DB_USER=grafana_ro
+  #                   GRAFANA_DB_PASSWORD=<password>
+  #                   MYSQL_DATABASE=<your-db-name>  (already set)
+  #   2. Create read-only MariaDB user (run once inside mariadb container):
+  #      CREATE USER 'grafana_ro'@'%' IDENTIFIED BY '<password>';
+  #      GRANT SELECT ON <db>.sensorreadings TO 'grafana_ro'@'%';
+  #      FLUSH PRIVILEGES;
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - mqtt_db
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    restart: unless-stopped
+    logging: *default-logging
+
+  # --- Explore OPT-B: Metabase BI dashboard ------------------------------------
+  # Access at http://sietchtabr:3002
+  # First-time setup: complete the Metabase setup wizard in the browser,
+  # then add a MySQL datasource pointing at mariadb:3306 with grafana_ro
+  # credentials (or a separate metabase_ro user).
+  metabase:
+    image: metabase/metabase:latest
+    container_name: metabase
+    ports:
+      - "3002:3000"
+    volumes:
+      - metabase-data:/metabase-data
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - mqtt_db
+    environment:
+      - MB_DB_TYPE=h2
+      - MB_DB_FILE=/metabase-data/metabase.db
+    restart: unless-stopped
+    logging: *default-logging
+
 networks:
   mqtt_net:
     name: mqtt_net
@@ -135,3 +188,5 @@ networks:
 volumes:
   uptime-kuma-data:
   ntfy-data:
+  grafana-data:
+  metabase-data:

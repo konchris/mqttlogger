@@ -1,8 +1,8 @@
 # Quality Attributes and Non-Functional Requirements
 
 **System:** mqttlogger
-**Feature:** 002-mqttlogger-baseline
-**Date:** 2026-05-09
+**Feature:** 008-grafana-dashboard (last updated)
+**Date:** 2026-05-16
 **Status:** DRAFT
 **Last Updated By:** se-nfr skill
 
@@ -22,6 +22,11 @@
 | NFR-MAIN-001 | Maintainability | Automated test coverage ≥ 80% line coverage | Should Have | Test | Open |
 | NFR-PORT-001 | Portability | Deployable via Docker Compose on Linux (amd64/arm64) only | Must Have | Demonstration | Open |
 | NFR-INT-001 | Interoperability | Database schema owned by mqttlogger; all changes via migration scripts | Must Have | Inspection | Open |
+| NFR-PERF-003 | Performance | Dashboard panels render within 10 seconds for a standard time-range query | Must Have | Test | Open |
+| NFR-REL-003 | Reliability | Dashboard available within 2 minutes of Docker Compose stack startup after host restart | Must Have | Demonstration | Open |
+| NFR-SEC-002 | Security | Grafana datasource uses dedicated read-only MariaDB user; credentials via `.env`, not committed | Must Have | Inspection | Open |
+| NFR-USE-003 | Usability | Full dashboard configuration provisioned from version control; no manual UI steps required to restore | Must Have | Demonstration | Open |
+| NFR-INT-002 | Interoperability | Grafana datasource queries `sensorreadings` only; no writes to any database table permitted | Must Have | Inspection | Open |
 
 **Safety (SAF):** Not applicable — system is classified non-safety in the constitution.
 **Regulatory (REG):** Not applicable — no regulatory obligations identified.
@@ -266,3 +271,110 @@ The following quality improvements were identified during elicitation and explic
 | Fault/gap detection mechanism | Maintainability | Addresses RISK-014/RISK-016; future architecture decision |
 | MariaDB port locked to Docker internal network only | Security | Future hardening candidate; not a current requirement |
 | Data export / portability utility | Portability | Future version candidate |
+
+---
+
+## Feature 008 — Grafana Dashboard NFRs
+
+### NFR-PERF-003 — Dashboard Panel Render Time
+
+**Category:** Performance
+**Priority:** Must Have
+**Source:** SC-CONOPS-009; operator-stated threshold
+**Status:** Open
+
+**Statement:**
+The dashboard shall render all panels for a standard time-range query (up to 7 days of data) within 10 seconds under normal operating conditions on the home LAN.
+
+**Rationale:**
+A panel that takes more than 10 seconds to load is indistinguishable from a failed query to the operator. The primary use case is ad-hoc historical lookup; slow render defeats the purpose of having a dashboard over direct SQL.
+
+**Verification Method:** Test
+**Verification Notes:** Open a dashboard with a 7-day time range; measure time from page load to all panels rendered with data. Repeat for a 30-day range. Both must complete within 10 seconds.
+
+**Conflicts With:** None
+**Conflict Resolution:** N/A
+
+---
+
+### NFR-REL-003 — Dashboard Startup Availability
+
+**Category:** Reliability
+**Priority:** Must Have
+**Source:** SC-CONOPS-010; MODE-008 (Dashboard Startup)
+**Status:** Open
+
+**Statement:**
+The Grafana dashboard shall be accessible via browser and the MariaDB datasource shall be healthy within 2 minutes of the Docker Compose stack starting, including after an unplanned host power cycle.
+
+**Rationale:**
+The operator has no tolerance for manual post-restart intervention. If the dashboard is not up within 2 minutes, the operator would consider it broken and investigate. Docker Compose startup ordering (depends_on with health check) must prevent Grafana from failing permanently due to MariaDB not being ready.
+
+**Verification Method:** Demonstration
+**Verification Notes:** Stop the full stack, start it, and measure time until Grafana HTTP endpoint responds and datasource health check passes. Verify no manual intervention is required. Test both clean start and post-power-cycle simulation.
+
+**Conflicts With:** None
+**Conflict Resolution:** N/A
+
+---
+
+### NFR-SEC-002 — Grafana Read-Only Database Credentials
+
+**Category:** Security
+**Priority:** Must Have
+**Source:** RISK-027; NFR-SEC-001
+**Status:** Open
+
+**Statement:**
+The Grafana datasource shall authenticate to MariaDB using a dedicated read-only database user with SELECT privilege on `sensorreadings` only. The mqttlogger write user shall not be used for Grafana. Credentials shall be supplied via `.env` file excluded from version control, consistent with NFR-SEC-001.
+
+**Rationale:**
+Using the write user for Grafana creates an unnecessary blast radius: a misconfigured query or compromised Grafana instance could corrupt or delete the historical record. A read-only user with table-scoped privilege eliminates this risk at negligible cost.
+
+**Verification Method:** Inspection
+**Verification Notes:** Verify the Grafana datasource configuration references a dedicated user (not the mqttlogger write user). Verify that user has only SELECT on `sensorreadings`. Verify `.env` is in `.gitignore` and contains no committed credential values.
+
+**Conflicts With:** None
+**Conflict Resolution:** N/A
+
+---
+
+### NFR-USE-003 — Dashboard Configuration as Code
+
+**Category:** Usability
+**Priority:** Must Have
+**Source:** NEED-STK-002-001; SC-CONOPS-010
+**Status:** Open
+
+**Statement:**
+All Grafana configuration — datasource definitions and dashboard JSON — shall be stored as version-controlled files and loaded via Grafana provisioning at container startup. No manual interaction with the Grafana UI shall be required to restore a fully functional dashboard after a clean Docker volume.
+
+**Rationale:**
+Loss of the Grafana Docker volume must not require manual click-through to restore the dashboard. Without provisioning-as-code, the dashboard configuration exists only in the volume — a single point of failure that violates the Everything-as-Code principle and the STK-002 re-orientation need.
+
+**Verification Method:** Demonstration
+**Verification Notes:** Delete the Grafana data volume. Run `docker compose up -d`. Verify the datasource and all dashboards are present and functional without any manual steps.
+
+**Conflicts With:** None
+**Conflict Resolution:** N/A
+
+---
+
+### NFR-INT-002 — Grafana Read-Only Database Access Scope
+
+**Category:** Interoperability
+**Priority:** Must Have
+**Source:** RISK-027; Constitution Principle I (Single-Purpose Service)
+**Status:** Open
+
+**Statement:**
+The Grafana service shall connect to MariaDB solely to read from the `sensorreadings` table. No other tables shall be queried and no write operations shall be issued by the Grafana service to any database table.
+
+**Rationale:**
+The dashboard is a read-only consumer of the data captured by mqttlogger. Any write capability from the Grafana service would violate the system's single-purpose design and create an uncontrolled write path to the historical record.
+
+**Verification Method:** Inspection
+**Verification Notes:** Verify the read-only MariaDB user has no INSERT, UPDATE, DELETE, or DDL privileges. Verify all Grafana panel queries reference only `sensorreadings`. Review provisioned dashboard JSON to confirm no write-capable query constructs are present.
+
+**Conflicts With:** None
+**Conflict Resolution:** N/A

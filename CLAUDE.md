@@ -18,10 +18,10 @@ Home automation sensor logger. HomeMatic IP sensors publish via CCU3/RedMatic ov
 
 No active feature branch. Next candidates:
 
-- **W-001**: promote `message received` and `write success` log events from DEBUG to INFO in `mqtt_client.py` (FR-006 warn)
-- **W-002**: make MQTT topic filter configurable via `config.json` instead of hardcoded `"environment/#"` in `mqtt_client.py:62` (FR-008 warn)
 - **RISK-012**: evaluate RedMatic startup zero suppression (OI-004)
 - **RISK-015**: configure BIOS power-restore on sietchtabr (OI-001)
+
+W-001 and W-002 were completed in feature `006-log-and-topic-fixes` (merged 2026-05-16).
 
 ### Architecture status — COMPLETE (2026-05-10)
 
