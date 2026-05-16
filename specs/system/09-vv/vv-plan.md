@@ -1,10 +1,10 @@
 # Verification and Validation Plan
 
 **System:** mqttlogger
-**Feature:** 004-remove-init-legacy (updated; originally 002-mqttlogger-baseline)
-**Date:** 2026-05-12
-**Status:** DRAFT — updated by feature 004
-**Last Updated By:** se-requirements skill (2026-05-12)
+**Feature:** 007-python312-upgrade (updated; previously 004-remove-init-legacy / 002-mqttlogger-baseline)
+**Date:** 2026-05-16
+**Status:** DRAFT — updated by feature 007
+**Last Updated By:** se-requirements skill (2026-05-16)
 
 ---
 
@@ -81,6 +81,10 @@ A requirement without a verification method is incomplete by definition.
 | FR-MON-006 | FR | Local push notification — fully LAN-only path to operator device | D | AT | Block outbound internet; verify notifications arrive on operator's iPhone on home Wi-Fi (requires physical device on home network — cannot be automated) | Chris | Planned |
 | FR-MON-007 | FR | Configurable monitoring parameters via environment variables | I | — | All parameters env-var sourced; no hardcoded thresholds | Chris | Planned |
 | FR-022 | FR | No dead code in mqttlogger/__init__.py | I | — | `mqttlogger/__init__.py` contains no callable definitions; codebase search finds zero callers for any removed symbol | Chris | Implemented |
+| FR-023 | FR | Python 3.12 base image — main app Dockerfile | I | — | `Dockerfile` first line is `FROM python:3.12-slim` | Chris | Planned |
+| FR-024 | FR | Python 3.12 base image — companion monitor Dockerfile | I | — | `companion-monitor/Dockerfile` first line is `FROM python:3.12-slim` | Chris | Planned |
+| FR-025 | FR | CI pipeline executes on Python 3.12 | I+T | IT | All `python-version` entries in `ci.yml` are `"3.12"`; CI lint and test+coverage jobs pass | Chris | Planned |
+| FR-026 | FR | Python 3.12-compatible dependency pins in requirements.txt | I+T | IT | `requirements.txt` specifies greenlet ≥ 3.0.0, SQLAlchemy ≥ 1.4.50, mysqlclient ≥ 2.2.0; CI passes with updated pins on Python 3.12 | Chris | Planned |
 
 ---
 

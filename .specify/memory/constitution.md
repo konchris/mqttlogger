@@ -99,7 +99,7 @@ repo root clean signals intent and reduces cognitive overhead for contributors.
 
 ## Deployment Constraints
 
-- The application targets Python 3.10+ running on Linux (amd64/arm64).
+- The application targets Python 3.12+ running on Linux (amd64/arm64).
 - The MQTT broker MUST be Eclipse Mosquitto. No other broker is officially supported.
 - The database MUST be MariaDB (MySQL-compatible). SQLAlchemy is the only sanctioned ORM.
 - `config.json` MUST NOT be committed with production credentials. Use `.env` and Docker
@@ -194,7 +194,7 @@ No regulatory obligations identified at this time.
 
 ### Known Constraints
 
-- **Python 3.10+ / Linux (amd64, arm64)** — Current runtime target; affects all phases. Python 3.11+ is a candidate upgrade but not yet actioned (TBD-005).
+- **Python 3.12+ / Linux (amd64, arm64)** — Current runtime target; affects all phases. Upgraded from 3.10 by feature 007-python312-upgrade (TBD-005 closed).
 - **Eclipse Mosquitto** — Only supported MQTT broker; affects architecture and integration test configuration.
 - **MariaDB + SQLAlchemy** — Only supported database stack; affects data model and all phases.
 - **Docker / Docker Compose** — Mandated deployment mechanism; affects all phases.
@@ -226,7 +226,7 @@ Additionally, the following SE-standard obligations apply:
 ### Development Standards
 
 **Language and Compiler:**
-Python 3.10+ (Linux, amd64/arm64). No compiler qualification required (non-safety-critical). Python 3.11+ is a candidate upgrade; not yet actioned (TBD-005).
+Python 3.12+ (Linux, amd64/arm64). No compiler qualification required (non-safety-critical). Upgraded from 3.10 by feature 007-python312-upgrade.
 
 **Coding Style and Linting:**
 Target: `ruff` (replaces flake8, isort, partial black). Configuration file location: TBD — to be added to `pyproject.toml` or `ruff.toml` (TBD-001). Current practice: informal PEP 8 enforced by developer discipline in PyCharm Pro.
@@ -322,7 +322,7 @@ Until Phase 3 gate passes, no solution option shall be eliminated without docume
 | TBD-002 | 80% coverage enforcement not yet active (pending CI/CD) | Chris | Phase 1 |
 | TBD-003 | GitHub Actions CI/CD pipeline not yet created | Chris | Phase 1 |
 | TBD-004 | Bitbucket → GitHub migration pending; credential hygiene check required | Chris | Phase 0 |
-| TBD-005 | Python 3.11+ upgrade candidate not yet actioned | Chris | Phase 2 |
+| TBD-005 | ~~Python 3.11+ upgrade candidate not yet actioned~~ CLOSED — feature 007-python312-upgrade (upgraded to 3.12) | Chris | Phase 2 |
 | TBD-006 | config.json → .env / environment variable migration planned but not scoped | Chris | Phase 2 |
 | TBD-007 | CHANGELOG.md and Google-style docstring standards aspirational only | Chris | Phase 1 |
 | TBD-008 | Future ingestion paths beyond MQTT not yet designed | Chris | Phase 3+ |
