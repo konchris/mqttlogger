@@ -81,6 +81,8 @@ def main(argv=None):
     mqttc.status_topic = STATUS_TOPIC
     mqttc.will_set(STATUS_TOPIC, payload="offline", qos=1, retain=True)
 
+    mqttc.topic_filter = config.get("mqtt_topic_filter", "environment/#")
+
     mqttc.connect(config["mqtt_server_ip"], config["mqtt_server_port"], 60)
     logger.debug("Client created")
 

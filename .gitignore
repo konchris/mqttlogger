@@ -68,3 +68,6 @@ companion-monitor/sensors.yml
 
 # Specify extension cache
 .specify/extensions/.cache/
+
+# pytest coverage data
+.coverage

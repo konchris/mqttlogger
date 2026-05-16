@@ -59,10 +59,9 @@ def on_connect(client, userdata, flags, rc):
         client.publish(status_topic, "online", qos=1, retain=True)
         module_logger.info("Published online status to %s", status_topic)
 
-    topics = ["environment/#"]
-    for topic in topics:
-        client.subscribe(topic)
-        module_logger.info("Successfully subscribed to topic %s" % topic)
+    topic_filter = getattr(client, 'topic_filter', "environment/#")
+    client.subscribe(topic_filter)
+    module_logger.info("Successfully subscribed to topic %s" % topic_filter)
 
 
 def on_message(client, userdata, message):
@@ -78,7 +77,7 @@ def on_message(client, userdata, message):
         an instance of MQTT Message. This is a class with members topic, payload, qos, retain
 
     """
-    module_logger.debug("Received message for topic: %s" % message.topic)
+    module_logger.info("Received message for topic: %s" % message.topic)
 
     module_logger.debug("Message payload: %s" % message.payload)
 
@@ -137,7 +136,7 @@ def insert(sensor_reading):
     try:
         session.add(sensor_reading)
         session.commit()
-        module_logger.debug("Successfully commited to the db.")
+        module_logger.info("Successfully committed to the db.")
     except Exception as exc:
         module_logger.error(
             "DB write failed for device=%s value=%s: %s" % (
