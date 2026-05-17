@@ -35,9 +35,9 @@ before Phase 2 begins.
 **Independent pass criterion:** All three queries return expected results; no anomalous topics
 found; null count is zero.
 
-- [ ] T001 Run `SELECT DISTINCT device FROM sensorreadings ORDER BY device` on sietchtabr — confirm every device is a 4-level topic matching `environment/L2/L3/L4` pattern (resolves ASM-A-001)
-- [ ] T002 [P] Run preview SELECT on sietchtabr showing derived `location`, `measurement_type`, `captured_at` for 50 rows: `SELECT device, SUBSTRING_INDEX(SUBSTRING_INDEX(device,'/',3),'/',-2) AS location, SUBSTRING_INDEX(device,'/',-1) AS measurement_type, TIMESTAMP(currentdate,currenttime) AS captured_at FROM sensorreadings LIMIT 50` — verify derivation is correct for all observed topics (resolves ASM-A-002, ASM-A-003)
-- [ ] T003 [P] Run `SELECT COUNT(*) FROM sensorreadings WHERE currentdate IS NULL OR currenttime IS NULL` on sietchtabr — confirm result is 0 (resolves ASM-A-004)
+- [x] T001 Run `SELECT DISTINCT device FROM sensorreadings ORDER BY device` on sietchtabr — confirm every device is a 4-level topic matching `environment/L2/L3/L4` pattern (resolves ASM-A-001)
+- [x] T002 [P] Run preview SELECT on sietchtabr showing derived `location`, `measurement_type`, `captured_at` for 50 rows: `SELECT device, SUBSTRING_INDEX(SUBSTRING_INDEX(device,'/',3),'/',-2) AS location, SUBSTRING_INDEX(device,'/',-1) AS measurement_type, TIMESTAMP(currentdate,currenttime) AS captured_at FROM sensorreadings LIMIT 50` — verify derivation is correct for all observed topics (resolves ASM-A-002, ASM-A-003)
+- [x] T003 [P] Run `SELECT COUNT(*) FROM sensorreadings WHERE currentdate IS NULL OR currenttime IS NULL` on sietchtabr — confirm result is 0 (resolves ASM-A-004)
 
 ---
 
@@ -50,7 +50,7 @@ during the SCN-008 deployment window. Prerequisite: Phase 1 all-pass.
 correct order; null-check gate separates transactional backfill from DDL; `DROP COLUMN`
 statements are last.
 
-- [ ] T004 [G2] Create `db/migration-009-schema-evolution.sql` with the full 15-step migration sequence: (1) ADD captured_at DATETIME NULL; (2) ADD location TEXT NULL; (3) ADD measurement_type TEXT NULL; (4) START TRANSACTION; (5) UPDATE SET captured_at = TIMESTAMP(currentdate, currenttime); (6) UPDATE SET location = SUBSTRING_INDEX(SUBSTRING_INDEX(device,'/',3),'/',-2); (7) UPDATE SET measurement_type = SUBSTRING_INDEX(device,'/',-1); (8) COMMIT; (9) SELECT COUNT(*) null-check gate; (10) MODIFY captured_at DATETIME NOT NULL; (11) MODIFY location TEXT NOT NULL; (12) MODIFY measurement_type TEXT NOT NULL; (13) CREATE INDEX idx_loc_mtype_time ON sensorreadings(location, measurement_type, captured_at); (14) DROP COLUMN currentdate; (15) DROP COLUMN currenttime — satisfies FR-023, FR-024, FR-025, FR-026, FR-027
+- [x] T004 [G2] Create `db/migration-009-schema-evolution.sql` with the full 15-step migration sequence: (1) ADD captured_at DATETIME NULL; (2) ADD location TEXT NULL; (3) ADD measurement_type TEXT NULL; (4) START TRANSACTION; (5) UPDATE SET captured_at = TIMESTAMP(currentdate, currenttime); (6) UPDATE SET location = SUBSTRING_INDEX(SUBSTRING_INDEX(device,'/',3),'/',-2); (7) UPDATE SET measurement_type = SUBSTRING_INDEX(device,'/',-1); (8) COMMIT; (9) SELECT COUNT(*) null-check gate; (10) MODIFY captured_at DATETIME NOT NULL; (11) MODIFY location TEXT NOT NULL; (12) MODIFY measurement_type TEXT NOT NULL; (13) CREATE INDEX idx_loc_mtype_time ON sensorreadings(location, measurement_type, captured_at); (14) DROP COLUMN currentdate; (15) DROP COLUMN currenttime — satisfies FR-023, FR-024, FR-025, FR-026, FR-027
 
 ---
 
@@ -61,7 +61,7 @@ databases from this model — once updated, the test schema automatically matche
 
 **Independent pass criterion:** Inspection of `data_model.py` shows `captured_at Column(DateTime, nullable=False)`, `location Column(Text, nullable=False)`, `measurement_type Column(Text, nullable=False)`; no `currentdate` or `currenttime` columns present.
 
-- [ ] T005 [G3] Update `mqttlogger/data_model.py`: remove `Column(Date)` for `currentdate` and `Column(Time)` for `currenttime`; add `Column(DateTime, nullable=False)` for `captured_at`, `Column(Text, nullable=False)` for `location`, `Column(Text, nullable=False)` for `measurement_type` — satisfies FR-028, FR-029, FR-030
+- [x] T005 [G3] Update `mqttlogger/data_model.py`: remove `Column(Date)` for `currentdate` and `Column(Time)` for `currenttime`; add `Column(DateTime, nullable=False)` for `captured_at`, `Column(Text, nullable=False)` for `location`, `Column(Text, nullable=False)` for `measurement_type` — satisfies FR-028, FR-029, FR-030
 
 ---
 
@@ -73,7 +73,7 @@ Prerequisite: T005 (model must define the new columns before handler can referen
 **Independent pass criterion:** Integration test publishes a known topic; inserted row has
 `captured_at` within 5 s of publish time, `location == 'indoor/attic'`, `measurement_type == 'temperature'`.
 
-- [ ] T006 [G4] Update `mqttlogger/mqtt_client.py`: add `from datetime import timezone` import; in `on_message()`, set `captured_at=datetime.now(timezone.utc)`, `location='/'.join(msg.topic.split('/')[1:3])`, `measurement_type=msg.topic.split('/')[-1]`; remove assignments to `currentdate` and `currenttime` — satisfies FR-031, FR-032, FR-033
+- [x] T006 [G4] Update `mqttlogger/mqtt_client.py`: add `from datetime import timezone` import; in `on_message()`, set `captured_at=datetime.now(timezone.utc)`, `location='/'.join(msg.topic.split('/')[1:3])`, `measurement_type=msg.topic.split('/')[-1]`; remove assignments to `currentdate` and `currenttime` — satisfies FR-031, FR-032, FR-033
 
 ---
 
@@ -87,8 +87,8 @@ dependency is the migration script, not the model file).
 **Independent pass criterion:** Inspection of `monitor.py` and `bootstrap_sensors.py` shows
 no reference to `currentdate`, `currenttime`, or `TIMESTAMP()`; `captured_at` used in all SQL WHERE clauses.
 
-- [ ] T007 [G5] Update `companion-monitor/monitor.py` `query_active_sensors()`: replace `TIMESTAMP(currentdate, currenttime) >= DATE_SUB(NOW(), INTERVAL %s MINUTE)` with `captured_at >= DATE_SUB(NOW(), INTERVAL %s MINUTE)` — satisfies FR-034
-- [ ] T008 [P] [G5] Update `companion-monitor/bootstrap_sensors.py`: replace `currentdate >= %s` with `DATE(captured_at) >= %s` in the lookback query — satisfies FR-035
+- [x] T007 [G5] Update `companion-monitor/monitor.py` `query_active_sensors()`: replace `TIMESTAMP(currentdate, currenttime) >= DATE_SUB(NOW(), INTERVAL %s MINUTE)` with `captured_at >= DATE_SUB(NOW(), INTERVAL %s MINUTE)` — satisfies FR-034
+- [x] T008 [P] [G5] Update `companion-monitor/bootstrap_sensors.py`: replace `currentdate >= %s` with `DATE(captured_at) >= %s` in the lookback query — satisfies FR-035
 
 ---
 
@@ -102,8 +102,8 @@ Phase 5.
 references `MONITOR_DB_USER` / `MONITOR_DB_PASSWORD` (not the logger's credentials);
 `.env.example` documents both variables.
 
-- [ ] T009 [G6] Update `docker-compose.yml` `companion_monitor` service: replace `DB_USER: ${MYSQL_USER}` / `DB_PASSWORD: ${MYSQL_PASSWORD}` with `DB_USER: ${MONITOR_DB_USER}` / `DB_PASSWORD: ${MONITOR_DB_PASSWORD}` environment variables — satisfies FR-036
-- [ ] T010 [P] [G6] Update `.env.example`: add `MONITOR_DB_USER=monitor_ro` and `MONITOR_DB_PASSWORD=` placeholder entries with explanatory comment referencing ADR-009
+- [x] T009 [G6] Update `docker-compose.yml` `companion_monitor` service: replace `DB_USER: ${MYSQL_USER}` / `DB_PASSWORD: ${MYSQL_PASSWORD}` with `DB_USER: ${MONITOR_DB_USER}` / `DB_PASSWORD: ${MONITOR_DB_PASSWORD}` environment variables — satisfies FR-036
+- [x] T010 [P] [G6] Update `.env.example`: add `MONITOR_DB_USER=monitor_ro` and `MONITOR_DB_PASSWORD=` placeholder entries with explanatory comment referencing ADR-009
 
 ---
 
@@ -118,8 +118,8 @@ Prerequisite: T005, T006.
 **Independent pass criterion:** `pytest` passes with coverage ≥80%; no test references
 `currentdate` or `currenttime`; integration tests verify FR-031, FR-032, FR-033 behaviour.
 
-- [ ] T011 [G7] Update `tests/mqttlogger/test_data_model.py`: replace all `SensorReading(currentdate=..., currenttime=...)` constructor calls with `SensorReading(captured_at=..., location=..., measurement_type=...)` using appropriate test values — required for CI green after T005
-- [ ] T012 [G7] Add integration tests to `tests/mqttlogger/test_mqtt_client.py` for FR-031, FR-032, FR-033: publish a known topic `environment/indoor/attic/temperature` with payload `{"val": 21.5}`; assert inserted row has `captured_at` within 5 s of publish, `location == 'indoor/attic'`, `measurement_type == 'temperature'`
+- [x] T011 [G7] Update `tests/mqttlogger/test_data_model.py`: replace all `SensorReading(currentdate=..., currenttime=...)` constructor calls with `SensorReading(captured_at=..., location=..., measurement_type=...)` using appropriate test values — required for CI green after T005
+- [x] T012 [G7] Add integration tests to `tests/mqttlogger/test_mqtt_client.py` for FR-031, FR-032, FR-033: publish a known topic `environment/indoor/attic/temperature` with payload `{"val": 21.5}`; assert inserted row has `captured_at` within 5 s of publish, `location == 'indoor/attic'`, `measurement_type == 'temperature'`
 
 ---
 
@@ -127,7 +127,7 @@ Prerequisite: T005, T006.
 
 **Goal:** RTM task reference column populated for all FR-023..FR-036 before Phase 4 gate.
 
-- [ ] T013 Update `specs/system/rtm.md` task reference column for FR-023..FR-036 with task IDs from this file (T004..T012)
+- [x] T013 Update `specs/system/rtm.md` task reference column for FR-023..FR-036 with task IDs from this file (T004..T012)
 
 ---
 
