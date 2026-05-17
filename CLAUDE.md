@@ -30,6 +30,7 @@ Home automation sensor logger. HomeMatic IP sensors publish via CCU3/RedMatic ov
 
 Next candidates (after 009 + 008):
 
+
 - **RISK-012**: evaluate RedMatic startup zero suppression (OI-004)
 - **RISK-015**: configure BIOS power-restore on sietchtabr (OI-001)
 

@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -19,11 +19,12 @@ RUN pip install --no-cache-dir --upgrade pip && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
     	libmariadb-dev \
+	pkg-config \
 	python3-dev \
 	build-essential && \
     pip install --no-cache-dir -r requirements.txt && \
     # Clean up to reduce image size
-    apt-get purge -y python3-dev build-essential && \
+    apt-get purge -y python3-dev build-essential pkg-config && \
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*

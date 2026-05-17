@@ -1,10 +1,10 @@
 # Requirements Traceability Matrix
 
 **System:** mqttlogger
-**Feature:** 004-remove-init-legacy (reviewed; originally 002-mqttlogger-baseline); 009-schema-evolution (updated)
-**Date:** 2026-05-12 (last architecture review); 2026-05-17 (feature 009 update)
-**Status:** DRAFT — implementation references complete for FR-023..FR-036; deployment complete on sietchtabr (2026-05-17); Phase 5 gate PASS
-**Last Updated By:** implementation (feature 009)
+**Feature:** 004-remove-init-legacy (reviewed); 007-python312-upgrade (updated); 009-schema-evolution (updated)
+**Date:** 2026-05-12 (last architecture review); 2026-05-16 (feature 007); 2026-05-17 (feature 009)
+**Status:** DRAFT — implementation references complete for FR-023..FR-040; deployment complete on sietchtabr (2026-05-17); Phase 5+6 gate PASS
+**Last Updated By:** implementation (feature 009 merge)
 
 ---
 
@@ -84,32 +84,45 @@ Maps every requirement to its source artifact, the architectural element that im
 
 ---
 
-## Section 5 — Schema Evolution (FR-023..FR-036, Feature 009)
-
-| Req ID | Short Description | Source Need | Design Element | V&V Method | V&V Stage | Status |
-| ------ | ----------------- | ----------- | -------------- | ---------- | --------- | ------ |
-| FR-023 | Migration adds captured_at DATETIME NOT NULL; backfills from TIMESTAMP(currentdate, currenttime) | NEED-STK-001-008, -010 | `db/migration-009-schema-evolution.sql` | I+T | ST | Implemented — Task: T004; file: `db/migration-009-schema-evolution.sql` |
-| FR-024 | Migration adds location TEXT NOT NULL; backfills from topic segments 2–3 | NEED-STK-001-008, -010 | `db/migration-009-schema-evolution.sql` | I+T | ST | Implemented — Task: T004; file: `db/migration-009-schema-evolution.sql` |
-| FR-025 | Migration adds measurement_type TEXT NOT NULL; backfills from final topic segment | NEED-STK-001-008, -010 | `db/migration-009-schema-evolution.sql` | I+T | ST | Implemented — Task: T004; file: `db/migration-009-schema-evolution.sql` |
-| FR-026 | Migration creates composite index idx_loc_mtype_time | NEED-STK-001-010 | `db/migration-009-schema-evolution.sql` | I | ST | Implemented — Task: T004; file: `db/migration-009-schema-evolution.sql` |
-| FR-027 | Migration drops currentdate and currenttime columns | NEED-STK-001-008 | `db/migration-009-schema-evolution.sql` | I+T | ST | Implemented — Task: T004; file: `db/migration-009-schema-evolution.sql` |
-| FR-028 | SensorReading model: captured_at DateTime NOT NULL; no currentdate/currenttime | NEED-STK-001-008 | `mqttlogger/data_model.py::SensorReading` | I | — | Implemented — Task: T005; file: `mqttlogger/data_model.py` |
-| FR-029 | SensorReading model: location Text NOT NULL | NEED-STK-001-008 | `mqttlogger/data_model.py::SensorReading` | I | — | Implemented — Task: T005; file: `mqttlogger/data_model.py` |
-| FR-030 | SensorReading model: measurement_type Text NOT NULL | NEED-STK-001-008 | `mqttlogger/data_model.py::SensorReading` | I | — | Implemented — Task: T005; file: `mqttlogger/data_model.py` |
-| FR-031 | on_message sets captured_at = datetime.now(timezone.utc) | NEED-STK-001-001, -010 | `mqttlogger/mqtt_client.py::on_message()` | T | IT | Implemented — Task: T006, T012; file: `mqttlogger/mqtt_client.py`; test: `test_on_message_sets_captured_at_to_utc_now` |
-| FR-032 | on_message sets location from topic segments 2+3 | NEED-STK-001-010 | `mqttlogger/mqtt_client.py::on_message()` | T | IT | Implemented — Task: T006, T012; file: `mqttlogger/mqtt_client.py`; test: `test_on_message_sets_location_from_topic_segments` (corrected slice [1:3]) |
-| FR-033 | on_message sets measurement_type from final topic segment | NEED-STK-001-010 | `mqttlogger/mqtt_client.py::on_message()` | T | IT | Implemented — Task: T006, T012; file: `mqttlogger/mqtt_client.py`; test: `test_on_message_sets_measurement_type_from_final_segment` |
-| FR-034 | monitor.py query_active_sensors() uses captured_at; no TIMESTAMP() | NEED-STK-001-002, -009 | `companion-monitor/monitor.py::query_active_sensors()` | I | — | Implemented — Task: T007; file: `companion-monitor/monitor.py` |
-| FR-035 | bootstrap_sensors.py uses DATE(captured_at); no currentdate | NEED-STK-001-009 | `companion-monitor/bootstrap_sensors.py` | I | — | Implemented — Task: T008; file: `companion-monitor/bootstrap_sensors.py` |
-| FR-036 | companion_monitor in docker-compose.yml uses read-only DB credentials | NEED-STK-001-008, -011 | `docker-compose.yml` companion_monitor env; MariaDB read-only user | I | ST | Implemented — Task: T009, T014; `docker-compose.yml` uses MONITOR_DB_USER/MONITOR_DB_PASSWORD; `monitor_ro` user created on sietchtabr with SELECT-only on sensorreadings |
-
----
-
 ## Section 4 — Code Quality (FR-022, Feature 004)
 
 | Req ID | Short Description | Source Need | Design Element | V&V Method | V&V Stage | Status |
 | ------ | ----------------- | ----------- | -------------- | ---------- | --------- | ------ |
 | FR-022 | No dead code in mqttlogger/__init__.py | NFR-MAIN-001, NEED-STK-001-007 | `mqttlogger/__init__.py` (emptied) | I | — | Implemented — Task: T002, T007 (feature-004) |
+
+---
+
+## Section 5 — Python 3.12 Runtime Upgrade (FR-023 through FR-026, Feature 007)
+
+| Req ID | Short Description | Source Need | Design Element | V&V Method | V&V Stage | Status |
+| ------ | ----------------- | ----------- | -------------- | ---------- | --------- | ------ |
+| FR-023 | Python 3.12 base image — main app | RISK-003, NEED-STK-001-004 | `Dockerfile` (FROM line) | I | — | Implemented — T004 (007); commit 3f90084 |
+| FR-024 | Python 3.12 base image — companion monitor | RISK-003, NEED-STK-001-004 | `companion-monitor/Dockerfile` (FROM line) | I | — | Implemented — T005 (007); commit 3f90084 |
+| FR-025 | CI pipeline executes on Python 3.12 | RISK-003, NFR-MAIN-001 | `.github/workflows/ci.yml` (both `python-version` entries) | I+T | IT | Implemented — T006 (007); commit 3f90084; CI green PR #9/#10 |
+| FR-026 | Python 3.12-compatible dependency pins | RISK-003, NEED-STK-001-004 | `requirements.txt` (greenlet, SQLAlchemy, mysqlclient pins) | I+T | IT | Implemented — T001–T003 (007); commits 3f90084, 1b7fac2 |
+
+---
+
+## Section 6 — Schema Evolution (FR-027..FR-040, Feature 009)
+
+*Note: Feature 009 artifacts (tasks.md, gate reports) reference these as FR-023..FR-036. Renumbered at merge time to avoid collision with feature 007.*
+
+| Req ID | Short Description | Source Need | Design Element | V&V Method | V&V Stage | Status |
+| ------ | ----------------- | ----------- | -------------- | ---------- | --------- | ------ |
+| FR-027 | Migration adds captured_at DATETIME NOT NULL; backfills from TIMESTAMP(currentdate, currenttime) | NEED-STK-001-008, -010 | `db/migration-009-schema-evolution.sql` | I+T | ST | Implemented — Task: T004; file: `db/migration-009-schema-evolution.sql` |
+| FR-028 | Migration adds location TEXT NOT NULL; backfills from topic segments 2–3 | NEED-STK-001-008, -010 | `db/migration-009-schema-evolution.sql` | I+T | ST | Implemented — Task: T004; file: `db/migration-009-schema-evolution.sql` |
+| FR-029 | Migration adds measurement_type TEXT NOT NULL; backfills from final topic segment | NEED-STK-001-008, -010 | `db/migration-009-schema-evolution.sql` | I+T | ST | Implemented — Task: T004; file: `db/migration-009-schema-evolution.sql` |
+| FR-030 | Migration creates composite index idx_loc_mtype_time | NEED-STK-001-010 | `db/migration-009-schema-evolution.sql` | I | ST | Implemented — Task: T004; file: `db/migration-009-schema-evolution.sql` |
+| FR-031 | Migration drops currentdate and currenttime columns | NEED-STK-001-008 | `db/migration-009-schema-evolution.sql` | I+T | ST | Implemented — Task: T004; file: `db/migration-009-schema-evolution.sql` |
+| FR-032 | SensorReading model: captured_at DateTime NOT NULL; no currentdate/currenttime | NEED-STK-001-008 | `mqttlogger/data_model.py::SensorReading` | I | — | Implemented — Task: T005; file: `mqttlogger/data_model.py` |
+| FR-033 | SensorReading model: location Text NOT NULL | NEED-STK-001-008 | `mqttlogger/data_model.py::SensorReading` | I | — | Implemented — Task: T005; file: `mqttlogger/data_model.py` |
+| FR-034 | SensorReading model: measurement_type Text NOT NULL | NEED-STK-001-008 | `mqttlogger/data_model.py::SensorReading` | I | — | Implemented — Task: T005; file: `mqttlogger/data_model.py` |
+| FR-035 | on_message sets captured_at = datetime.now(timezone.utc) | NEED-STK-001-001, -010 | `mqttlogger/mqtt_client.py::on_message()` | T | IT | Implemented — Task: T006, T012; file: `mqttlogger/mqtt_client.py`; test: `test_on_message_sets_captured_at_to_utc_now` |
+| FR-036 | on_message sets location from topic segments 2+3 | NEED-STK-001-010 | `mqttlogger/mqtt_client.py::on_message()` | T | IT | Implemented — Task: T006, T012; file: `mqttlogger/mqtt_client.py`; test: `test_on_message_sets_location_from_topic_segments` (corrected slice [1:3]) |
+| FR-037 | on_message sets measurement_type from final topic segment | NEED-STK-001-010 | `mqttlogger/mqtt_client.py::on_message()` | T | IT | Implemented — Task: T006, T012; file: `mqttlogger/mqtt_client.py`; test: `test_on_message_sets_measurement_type_from_final_segment` |
+| FR-038 | monitor.py query_active_sensors() uses captured_at; no TIMESTAMP() | NEED-STK-001-002, -009 | `companion-monitor/monitor.py::query_active_sensors()` | I | — | Implemented — Task: T007; file: `companion-monitor/monitor.py` |
+| FR-039 | bootstrap_sensors.py uses DATE(captured_at); no currentdate | NEED-STK-001-009 | `companion-monitor/bootstrap_sensors.py` | I | — | Implemented — Task: T008; file: `companion-monitor/bootstrap_sensors.py` |
+| FR-040 | companion_monitor in docker-compose.yml uses read-only DB credentials | NEED-STK-001-008, -011 | `docker-compose.yml` companion_monitor env; MariaDB read-only user | I | ST | Implemented — Task: T009, T014; `docker-compose.yml` uses MONITOR_DB_USER/MONITOR_DB_PASSWORD; `monitor_ro` user created on sietchtabr with SELECT-only on sensorreadings |
 
 ---
 

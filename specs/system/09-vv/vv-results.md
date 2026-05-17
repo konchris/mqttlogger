@@ -1,10 +1,81 @@
 # Verification and Validation Results
 
 **System:** mqttlogger
-**Feature:** 009-schema-evolution (Phase 6 closure)
-**Date:** 2026-05-17
+**Feature:** 007-python312-upgrade (Phase 6 closure); 009-schema-evolution (Phase 6 closure)
+**Date:** 2026-05-16 (feature 007); 2026-05-17 (feature 009)
 **Status:** COMPLETE — all entries resolved (Pass | Waived); no Fail results
 **Conducted By:** operator (Chris) + se-gate skill
+
+---
+
+## Purpose
+
+Records the results of all verification and validation events. Each row references the corresponding
+V&V plan entry. Results are accumulated across features; this document was initiated at feature 007
+Phase 6 closure.
+
+---
+
+## Feature 007 — Python 3.12 Runtime Upgrade Results
+
+All four Must Have requirements introduced by feature 007 have been verified. Verification methods:
+Inspection (I) for artifact checks; Test (T) for CI pipeline confirmation.
+
+| Req ID | Method | Event | Result | Evidence | Date |
+|--------|--------|-------|--------|----------|------|
+| FR-023 | I | Inspect `Dockerfile` FROM line | **Pass** | `FROM python:3.12-slim` confirmed; commit 3f90084 | 2026-05-16 |
+| FR-024 | I | Inspect `companion-monitor/Dockerfile` FROM line | **Pass** | `FROM python:3.12-slim` confirmed; commit 3f90084 | 2026-05-16 |
+| FR-025 | I+T | Inspect `ci.yml`; CI pipeline execution | **Pass** | Both `python-version` entries confirmed `"3.12"`; CI Lint and Test+Coverage green on PR #9 and PR #10 | 2026-05-16 |
+| FR-026 | I+T | Inspect `requirements.txt`; CI pipeline execution; sietchtabr build | **Pass** | `greenlet>=3.0.0` resolved to 3.5.0; `sqlalchemy>=1.4.50,<2.0` and `mysqlclient>=2.2.0` satisfied; CI green; `docker compose build` succeeded on sietchtabr after pkg-config fix (commit 1b7fac2) | 2026-05-16 |
+
+---
+
+## Acceptance Test Scenarios — Feature 007 Deployment
+
+Two ConOps acceptance scenarios were incidentally exercised during the feature 007 deployment test
+on sietchtabr.
+
+| Scenario ID | Name | Method | Result | Evidence | Date |
+|-------------|------|--------|--------|----------|------|
+| SCN-001 | Continuous sensor capture | Demonstration | **Pass** | New sensor readings appeared in MariaDB within 5 minutes of `docker compose up -d` on sietchtabr with Python 3.12 containers | 2026-05-16 |
+| SCN-007 | Planned maintenance | Demonstration | **Pass** | `docker compose build && docker compose up -d`; containers healthy; operator confirmed new readings in DB | 2026-05-16 |
+
+---
+
+## Previously Validated at IP-001 Baseline (Pre-Feature-007)
+
+The following requirements were validated during the IP-001 integration baseline (2026-05-10 to
+2026-05-12). Feature 007 introduced no runtime behavior changes; these results remain valid.
+
+| Req ID | Result | Evidence |
+|--------|--------|----------|
+| FR-MON-001 | **Pass** | IP-001: crash notification mean 93 s, max 120 s, 3/3 runs detected |
+| FR-MON-002 | **Pass** | IP-001: attic humidity silence correctly detected (>gap window) |
+| FR-MON-003 | **Pass** | IP-001: attic humidity recovery notification confirmed |
+| FR-MON-004 | **Pass** | IP-001: 3 dining room sensors auto-detected as unknown |
+| IF-011 | **Pass** | IP-001: sensor monitor → ntfy state-transition alerting confirmed |
+
+---
+
+## Carried Forward — System Acceptance Testing
+
+The following V&V plan entries have not been executed. Feature 007 introduced no runtime change
+to any of these areas; the system behavior they describe is unchanged from the pre-feature-007
+baseline. These items are carried forward to a future system acceptance test phase.
+
+**Rationale for deferral:** Feature 007 modifies only build infrastructure (Dockerfiles,
+requirements.txt, ci.yml). No application logic, protocol handling, database schema, monitoring
+behavior, or configuration processing changed. Re-executing system acceptance tests for a
+build-only runtime version upgrade is not required; the IP-001 baseline and CI test suite
+provide sufficient assurance of continued behavioral correctness.
+
+| Category | Items Carried Forward |
+|----------|-----------------------|
+| NFR verification | NFR-PERF-001, NFR-PERF-002, NFR-REL-001, NFR-REL-002, NFR-SEC-001, NFR-USE-001, NFR-USE-002, NFR-PORT-001, NFR-INT-001 |
+| Core logger FRs | FR-001 through FR-014 |
+| Monitoring FRs | FR-MON-005, FR-MON-006, FR-MON-007 |
+| Acceptance scenarios | SCN-002 (power outage), SCN-003 (crash recovery), SCN-004 (misconfigured startup), SCN-005 (broker unavailable), SCN-006 (HomeMatic startup zeros) |
+| Interfaces | IF-001 through IF-010 |
 
 ---
 
@@ -88,24 +159,24 @@ or IP-001 24h baseline validation. Formal campaign execution is deferred per REQ
 |--------|--------|----------|
 | FR-022 | **Pass** | mqttlogger/__init__.py inspected: empty file; no callables; implemented in feature 004 |
 
-### Schema Evolution (FR-023..FR-036)
+### Schema Evolution (FR-027..FR-040)
 
 | Req ID | Result | Evidence |
 |--------|--------|----------|
-| FR-023 | **Pass** | Migration SQL inspected; null-check returned 0 on sietchtabr; DESCRIBE confirms captured_at DATETIME NOT NULL |
-| FR-024 | **Pass** | Migration SQL inspected; spot-check on sietchtabr: location derivation correct for all observed topics |
-| FR-025 | **Pass** | Migration SQL inspected; spot-check on sietchtabr: measurement_type derivation correct |
-| FR-026 | **Pass** | SHOW INDEX on sietchtabr 2026-05-17: idx_loc_mtype_time present |
-| FR-027 | **Pass** | DESCRIBE sensorreadings on sietchtabr 2026-05-17: currentdate and currenttime absent |
-| FR-028 | **Pass** | data_model.py inspected: Column(DateTime, nullable=False) for captured_at; Date/Time columns absent; CI green |
-| FR-029 | **Pass** | data_model.py inspected: Column(Text, nullable=False) for location |
-| FR-030 | **Pass** | data_model.py inspected: Column(Text, nullable=False) for measurement_type |
-| FR-031 | **Pass** | test_on_message_sets_captured_at_to_utc_now PASS in CI (timezone-aware; within 1 s window) |
-| FR-032 | **Pass** | test_on_message_sets_location_from_topic_segments PASS; test_on_message_location_and_type_for_outdoor_humidity PASS |
-| FR-033 | **Pass** | test_on_message_sets_measurement_type_from_final_segment PASS in CI |
-| FR-034 | **Pass** | monitor.py inspected: `captured_at >= DATE_SUB(NOW(), INTERVAL %s MINUTE)`; no legacy column refs |
-| FR-035 | **Pass** | bootstrap_sensors.py inspected: `DATE(captured_at) >= %s`; no legacy column refs |
-| FR-036 | **Pass** | docker-compose.yml inspected; monitor_ro user created on sietchtabr with SELECT-only on sensorreadings |
+| FR-027 | **Pass** | Migration SQL inspected; null-check returned 0 on sietchtabr; DESCRIBE confirms captured_at DATETIME NOT NULL |
+| FR-028 | **Pass** | Migration SQL inspected; spot-check on sietchtabr: location derivation correct for all observed topics |
+| FR-029 | **Pass** | Migration SQL inspected; spot-check on sietchtabr: measurement_type derivation correct |
+| FR-030 | **Pass** | SHOW INDEX on sietchtabr 2026-05-17: idx_loc_mtype_time present |
+| FR-031 | **Pass** | DESCRIBE sensorreadings on sietchtabr 2026-05-17: currentdate and currenttime absent |
+| FR-032 | **Pass** | data_model.py inspected: Column(DateTime, nullable=False) for captured_at; Date/Time columns absent; CI green |
+| FR-033 | **Pass** | data_model.py inspected: Column(Text, nullable=False) for location |
+| FR-034 | **Pass** | data_model.py inspected: Column(Text, nullable=False) for measurement_type |
+| FR-035 | **Pass** | test_on_message_sets_captured_at_to_utc_now PASS in CI (timezone-aware; within 1 s window) |
+| FR-036 | **Pass** | test_on_message_sets_location_from_topic_segments PASS; test_on_message_location_and_type_for_outdoor_humidity PASS |
+| FR-037 | **Pass** | test_on_message_sets_measurement_type_from_final_segment PASS in CI |
+| FR-038 | **Pass** | monitor.py inspected: `captured_at >= DATE_SUB(NOW(), INTERVAL %s MINUTE)`; no legacy column refs |
+| FR-039 | **Pass** | bootstrap_sensors.py inspected: `DATE(captured_at) >= %s`; no legacy column refs |
+| FR-040 | **Pass** | docker-compose.yml inspected; monitor_ro user created on sietchtabr with SELECT-only on sensorreadings |
 
 ---
 

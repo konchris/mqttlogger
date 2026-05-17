@@ -1,10 +1,10 @@
 # Requirements Register
 
 **System:** mqttlogger
-**Feature:** 004-remove-init-legacy (updated; originally 002-mqttlogger-baseline); 009-schema-evolution (updated)
-**Date:** 2026-05-12 (last quality gate); 2026-05-17 (feature 009 update)
-**Status:** DRAFT — feature 009 implementation complete; all FR-023..FR-036 implemented and deployed on sietchtabr (2026-05-17)
-**Last Updated By:** se-req-quality skill (feature 009)
+**Feature:** 004-remove-init-legacy (updated); 007-python312-upgrade (Section 5 added); 009-schema-evolution (Section 6 added)
+**Date:** 2026-05-12 (last quality gate); 2026-05-16 (feature 007); 2026-05-17 (feature 009)
+**Status:** DRAFT — FR-027..FR-040 (feature 009 schema evolution) implemented and deployed on sietchtabr (2026-05-17); note: 009 feature artifacts use original numbering FR-023..FR-036 (renumbered at merge to FR-027..FR-040 to avoid collision with feature 007)
+**Last Updated By:** se-req-quality skill (feature 009 merge)
 
 ---
 
@@ -245,7 +245,7 @@ These requirements describe the passive monitoring capability added by the OPT-A
 
 **Statement:** The monitoring system shall track alert state in memory so that each alert fires exactly once on transition (normal → alert, alert → normal), not on every polling cycle.
 
-**Source:** OPT-B design, NEED-STK-001-002 (failures must surface visibly, not flood)
+**Source:** OPT-B design, NEED-STK-001-002
 **Priority:** Must Have
 **Verification Method:** Test (IT) — sustain a sensor silence for multiple poll cycles; verify exactly one alert notification is sent; verify one recovery notification on resume
 **Status:** Implemented (in-memory sets `alerted_missing`, `alerted_unknown` in monitor.py)
@@ -302,20 +302,24 @@ These requirements describe the passive monitoring capability added by the OPT-A
 | FR-MON-006 | — | — | NFR-PORT-001 | Implemented |
 | FR-MON-007 | — | — | NFR-SEC-001 | Implemented |
 | FR-022 | — | — | NFR-MAIN-001 | Implemented |
-| FR-023 | SCN-008 | — | NFR-INT-003, NFR-MAIN-002 | Implemented |
-| FR-024 | SCN-008 | — | NFR-INT-003 | Implemented |
-| FR-025 | SCN-008 | — | NFR-INT-003 | Implemented |
-| FR-026 | SCN-008 | — | NFR-PERF-003 | Implemented |
-| FR-027 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-023 | — | RISK-003 | NFR-PORT-001 | Implemented |
+| FR-024 | — | RISK-003 | NFR-PORT-001 | Implemented |
+| FR-025 | — | RISK-003 | NFR-MAIN-001 | Implemented |
+| FR-026 | — | RISK-003 | — | Implemented |
+| FR-027 | SCN-008 | — | NFR-INT-003, NFR-MAIN-002 | Implemented |
 | FR-028 | SCN-008 | — | NFR-INT-003 | Implemented |
 | FR-029 | SCN-008 | — | NFR-INT-003 | Implemented |
-| FR-030 | SCN-008 | — | NFR-INT-003 | Implemented |
-| FR-031 | SCN-008 | — | NFR-PERF-002 | Implemented |
+| FR-030 | SCN-008 | — | NFR-PERF-003 | Implemented |
+| FR-031 | SCN-008 | — | NFR-INT-003 | Implemented |
 | FR-032 | SCN-008 | — | NFR-INT-003 | Implemented |
 | FR-033 | SCN-008 | — | NFR-INT-003 | Implemented |
-| FR-034 | SCN-008 | RISK-026 | NFR-INT-003 | Implemented |
-| FR-035 | SCN-008 | RISK-026 | NFR-INT-003 | Implemented |
-| FR-036 | — | RISK-028 | NFR-INT-002 | Implemented |
+| FR-034 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-035 | SCN-008 | — | NFR-PERF-002 | Implemented |
+| FR-036 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-037 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-038 | SCN-008 | RISK-026 | NFR-INT-003 | Implemented |
+| FR-039 | SCN-008 | RISK-026 | NFR-INT-003 | Implemented |
+| FR-040 | — | RISK-028 | NFR-INT-002 | Implemented |
 
 ---
 
@@ -340,25 +344,29 @@ These requirements describe the passive monitoring capability added by the OPT-A
 | FR-MON-001 | PASS | |
 | FR-MON-002 | PASS | |
 | FR-MON-003 | PASS | |
-| FR-MON-004 | PASS WITH WARNINGS | Unambiguous: rewritten to resolve grammatical ambiguity |
-| FR-MON-005 | PASS WITH WARNINGS | Necessary: NEED-STK-001-002 added as co-source |
+| FR-MON-004 | PASS | Unambiguous WARN resolved 2026-05-16 — requirement rewritten |
+| FR-MON-005 | PASS | Necessary WARN resolved 2026-05-16 — NEED-STK-001-002 co-source added |
 | FR-MON-006 | PASS WITH WARNINGS | Singular: two sentences for same LAN-only constraint (acceptable) |
 | FR-MON-007 | PASS WITH WARNINGS | Singular: positive+negative form of same principle (acceptable) |
 | FR-022 | PASS | |
-| FR-023 | PASS WITH WARNINGS | Singular: ADD + POPULATE inseparable for NOT NULL column (acceptable) |
-| FR-024 | PASS WITH WARNINGS | Singular: ADD + POPULATE inseparable for NOT NULL column (acceptable) |
-| FR-025 | PASS WITH WARNINGS | Singular: ADD + POPULATE inseparable for NOT NULL column (acceptable) |
-| FR-026 | PASS | |
-| FR-027 | PASS WITH WARNINGS | Singular: drop two columns = one logical action (acceptable); Complete WARN resolved — text updated to specify explicit SQL null-check criterion |
-| FR-028 | PASS WITH WARNINGS | Singular: positive + negative form of same class property (acceptable) |
-| FR-029 | PASS | |
+| FR-023 | PASS WITH WARNINGS | Singular: two-sentence goal+mechanism (acceptable) |
+| FR-024 | PASS WITH WARNINGS | Singular: two-sentence goal+mechanism (acceptable) |
+| FR-025 | PASS WITH WARNINGS | Singular: two-sentence goal+mechanism (acceptable) |
+| FR-026 | PASS WITH WARNINGS | Singular: three-package constraint (acceptable) |
+| FR-027 | PASS WITH WARNINGS | Singular: ADD + POPULATE inseparable for NOT NULL column (acceptable) |
+| FR-028 | PASS WITH WARNINGS | Singular: ADD + POPULATE inseparable for NOT NULL column (acceptable) |
+| FR-029 | PASS WITH WARNINGS | Singular: ADD + POPULATE inseparable for NOT NULL column (acceptable) |
 | FR-030 | PASS | |
-| FR-031 | PASS WITH WARNINGS | Unambiguous WARN resolved — text updated to `datetime.now(timezone.utc)` |
-| FR-032 | PASS WITH WARNINGS | Complete: non-conforming topic behavior unspecified; mitigated by ASM-A-001 pre-deployment check (acceptable) |
+| FR-031 | PASS WITH WARNINGS | Singular: drop two columns = one logical action (acceptable); Complete WARN resolved — text updated to specify explicit SQL null-check criterion |
+| FR-032 | PASS WITH WARNINGS | Singular: positive + negative form of same class property (acceptable) |
 | FR-033 | PASS | |
 | FR-034 | PASS | |
-| FR-035 | PASS | |
-| FR-036 | PASS WITH WARNINGS | Singular: credentials + privilege level = one access-control policy (acceptable) |
+| FR-035 | PASS WITH WARNINGS | Unambiguous WARN resolved — text updated to `datetime.now(timezone.utc)` |
+| FR-036 | PASS WITH WARNINGS | Complete: non-conforming topic behavior unspecified; mitigated by ASM-A-001 pre-deployment check (acceptable) |
+| FR-037 | PASS | |
+| FR-038 | PASS | |
+| FR-039 | PASS | |
+| FR-040 | PASS WITH WARNINGS | Singular: credentials + privilege level = one access-control policy (acceptable) |
 
 ---
 
@@ -380,9 +388,69 @@ Requirements derived from NFR-MAIN-001 and the 004-remove-init-legacy feature. N
 
 ---
 
+## Section 5 — Python 3.12 Runtime Upgrade (Feature 007)
+
+Requirements derived from RISK-003 (Python 3.10 EOL October 2026), NFR-PORT-001, and NFR-MAIN-001. No new operational scenarios — the upgrade touches only build/CI artefacts; the running system behaviour is unchanged.
+
 ---
 
-## Section 5 — Schema Evolution (Feature 009)
+### FR-023 — Main App Python 3.12 Runtime
+
+**Statement:** The main application container image shall use Python 3.12 as its base runtime. The `Dockerfile` shall specify `FROM python:3.12-slim` as its base image.
+
+**Source:** RISK-003, NFR-PORT-001
+**Traced Need:** NEED-STK-001-004
+**Priority:** Must Have
+**Verification Method:** Inspection — verify `Dockerfile` first line is `FROM python:3.12-slim`
+**IEEE 29148 Quality:** PASS on all 8 attributes
+**Status:** Implemented — commit 3f90084 (007)
+
+---
+
+### FR-024 — Companion Monitor Python 3.12 Runtime
+
+**Statement:** The companion monitor container image shall use Python 3.12 as its base runtime. The `companion-monitor/Dockerfile` shall specify `FROM python:3.12-slim` as its base image.
+
+**Source:** RISK-003, NFR-PORT-001
+**Traced Need:** NEED-STK-001-004
+**Priority:** Must Have
+**Verification Method:** Inspection — verify `companion-monitor/Dockerfile` first line is `FROM python:3.12-slim`
+**IEEE 29148 Quality:** PASS on all 8 attributes
+**Status:** Implemented — commit 3f90084 (007)
+
+---
+
+### FR-025 — CI Pipeline Python 3.12 Alignment
+
+**Statement:** The CI pipeline shall execute all lint, test, and coverage jobs using Python 3.12. All `python-version` entries in `.github/workflows/ci.yml` shall specify `"3.12"`.
+
+**Source:** RISK-003, NFR-MAIN-001
+**Traced Need:** NEED-STK-001-004
+**Priority:** Must Have
+**Verification Method:** Inspection + Test — verify `ci.yml` `python-version` entries specify `"3.12"`; CI lint and test+coverage jobs pass on Python 3.12
+**IEEE 29148 Quality:** PASS on all 8 attributes
+**Status:** Implemented — commit 3f90084 (007); CI green on Python 3.12 (PR #9, PR #10)
+
+---
+
+### FR-026 — Python 3.12-Compatible Dependency Pins
+
+**Statement:** All Python packages in `requirements.txt` shall be pinned to versions that support Python 3.12. The following minimum versions shall be satisfied: `greenlet >= 3.0.0`, `SQLAlchemy >= 1.4.50`, and `mysqlclient >= 2.2.0`. All other existing pins shall remain unchanged unless upgrading them is required to achieve Python 3.12 compatibility.
+
+**Source:** RISK-003, Constitution Development Workflow Rule 5
+**Traced Need:** NEED-STK-001-004
+**Priority:** Must Have
+**Verification Method:** Inspection + Test — verify `requirements.txt` satisfies the stated minimums; CI passes with updated pins on Python 3.12
+**IEEE 29148 Quality:** PASS WITH WARNINGS — Singular: three package constraints stated in one requirement; all serve the single Python 3.12 compatibility obligation (acceptable per FR-003/FR-007 precedent)
+**Status:** Implemented — commit 3f90084 (007); pkg-config fix 1b7fac2 (007)
+
+---
+
+---
+
+## Section 6 — Schema Evolution (Feature 009)
+
+*Note: Feature 009 artifacts (tasks.md, gate reports) reference these requirements as FR-023..FR-036. They were renumbered to FR-027..FR-040 at merge time to avoid collision with feature 007.*
 
 Requirements derived from SCN-008 (Live Schema Migration), NFR-INT-002, NFR-INT-003,
 NFR-PERF-003, and the OPT-A convergence decision. They cover the migration script, the
@@ -395,7 +463,7 @@ NEED-STK-001-011 (trustworthy data).
 
 ---
 
-### FR-023 — Migration: Add `captured_at`
+### FR-027 — Migration: Add `captured_at`
 
 **Statement:** The migration script shall add a column `captured_at DATETIME NOT NULL` to the `sensorreadings` table and populate it for every existing row with `TIMESTAMP(currentdate, currenttime)` for that row, executed within a transaction before any `DROP COLUMN` statement.
 
@@ -408,7 +476,7 @@ NEED-STK-001-011 (trustworthy data).
 
 ---
 
-### FR-024 — Migration: Add `location`
+### FR-028 — Migration: Add `location`
 
 **Statement:** The migration script shall add a column `location TEXT NOT NULL` to the `sensorreadings` table and populate it for every existing row with `SUBSTRING_INDEX(SUBSTRING_INDEX(device, '/', 3), '/', -2)` — the second and third slash-delimited path segments of `device`, joined by a forward slash (e.g. `environment/indoor/attic/temperature` → `indoor/attic`).
 
@@ -421,7 +489,7 @@ NEED-STK-001-011 (trustworthy data).
 
 ---
 
-### FR-025 — Migration: Add `measurement_type`
+### FR-029 — Migration: Add `measurement_type`
 
 **Statement:** The migration script shall add a column `measurement_type TEXT NOT NULL` to the `sensorreadings` table and populate it for every existing row with `SUBSTRING_INDEX(device, '/', -1)` — the final slash-delimited path segment of `device` (e.g. `environment/indoor/attic/temperature` → `temperature`).
 
@@ -434,7 +502,7 @@ NEED-STK-001-011 (trustworthy data).
 
 ---
 
-### FR-026 — Migration: Composite Index
+### FR-030 — Migration: Composite Index
 
 **Statement:** The migration script shall create a composite index named `idx_loc_mtype_time` on `sensorreadings(location, measurement_type, captured_at)` after the three new columns have been populated.
 
@@ -443,11 +511,11 @@ NEED-STK-001-011 (trustworthy data).
 **Priority:** Must Have
 **Verification Method:** Inspection — post-migration: `SHOW INDEX FROM sensorreadings` confirms index `idx_loc_mtype_time` exists on columns `(location, measurement_type, captured_at)` in that order
 **IEEE 29148 Quality:** PASS
-**Status:** Planned
+**Status:** Implemented
 
 ---
 
-### FR-027 — Migration: Drop Legacy Timestamp Columns
+### FR-031 — Migration: Drop Legacy Timestamp Columns
 
 **Statement:** The migration script shall drop the `currentdate` and `currenttime` columns from `sensorreadings` after all three new columns have been populated and after executing `SELECT COUNT(*) FROM sensorreadings WHERE captured_at IS NULL` and confirming the result is zero.
 
@@ -460,7 +528,7 @@ NEED-STK-001-011 (trustworthy data).
 
 ---
 
-### FR-028 — Model: `captured_at` Column
+### FR-032 — Model: `captured_at` Column
 
 **Statement:** The `SensorReading` SQLAlchemy model in `mqttlogger/data_model.py` shall declare `captured_at` as a `DateTime` column that does not permit null values, and shall not declare `currentdate` or `currenttime` columns.
 
@@ -473,7 +541,7 @@ NEED-STK-001-011 (trustworthy data).
 
 ---
 
-### FR-029 — Model: `location` Column
+### FR-033 — Model: `location` Column
 
 **Statement:** The `SensorReading` SQLAlchemy model shall declare `location` as a `Text` column that does not permit null values.
 
@@ -486,7 +554,7 @@ NEED-STK-001-011 (trustworthy data).
 
 ---
 
-### FR-030 — Model: `measurement_type` Column
+### FR-034 — Model: `measurement_type` Column
 
 **Statement:** The `SensorReading` SQLAlchemy model shall declare `measurement_type` as a `Text` column that does not permit null values.
 
@@ -499,7 +567,7 @@ NEED-STK-001-011 (trustworthy data).
 
 ---
 
-### FR-031 — `on_message`: Populate `captured_at`
+### FR-035 — `on_message`: Populate `captured_at`
 
 **Statement:** The `on_message` handler in `mqttlogger/mqtt_client.py` shall set `captured_at` on each new `SensorReading` to `datetime.now(timezone.utc)` at the time the MQTT message is received.
 
@@ -512,7 +580,7 @@ NEED-STK-001-011 (trustworthy data).
 
 ---
 
-### FR-032 — `on_message`: Populate `location`
+### FR-036 — `on_message`: Populate `location`
 
 **Statement:** The `on_message` handler shall set `location` on each new `SensorReading` to the second and third slash-delimited path segments of the MQTT message topic, joined by a forward slash (e.g. topic `environment/indoor/attic/temperature` → `location = 'indoor/attic'`).
 
@@ -525,7 +593,7 @@ NEED-STK-001-011 (trustworthy data).
 
 ---
 
-### FR-033 — `on_message`: Populate `measurement_type`
+### FR-037 — `on_message`: Populate `measurement_type`
 
 **Statement:** The `on_message` handler shall set `measurement_type` on each new `SensorReading` to the final slash-delimited path segment of the MQTT message topic (e.g. topic `environment/indoor/attic/temperature` → `measurement_type = 'temperature'`).
 
@@ -538,7 +606,7 @@ NEED-STK-001-011 (trustworthy data).
 
 ---
 
-### FR-034 — Companion Monitor: Use `captured_at` for Gap Detection
+### FR-038 — Companion Monitor: Use `captured_at` for Gap Detection
 
 **Statement:** The `query_active_sensors()` function in `companion-monitor/monitor.py` shall filter rows using the expression `captured_at >= DATE_SUB(NOW(), INTERVAL %s MINUTE)` in place of `TIMESTAMP(currentdate, currenttime) >= DATE_SUB(NOW(), INTERVAL %s MINUTE)`.
 
@@ -551,7 +619,7 @@ NEED-STK-001-011 (trustworthy data).
 
 ---
 
-### FR-035 — Companion Monitor: Use `captured_at` in Bootstrap Query
+### FR-039 — Companion Monitor: Use `captured_at` in Bootstrap Query
 
 **Statement:** The `bootstrap_sensors.py` script shall filter rows using the expression `DATE(captured_at) >= %s` in place of `currentdate >= %s` when querying for sensors active within a lookback period.
 
@@ -564,7 +632,7 @@ NEED-STK-001-011 (trustworthy data).
 
 ---
 
-### FR-036 — Companion Monitor: Read-Only Database Credentials
+### FR-040 — Companion Monitor: Read-Only Database Credentials
 
 **Statement:** The `companion_monitor` service definition in `docker-compose.yml` shall supply database credentials for a MariaDB user that has `SELECT`-only privileges on `sensorreadings`, distinct from the write-capable credentials used by the `mqtt_logger` service.
 
