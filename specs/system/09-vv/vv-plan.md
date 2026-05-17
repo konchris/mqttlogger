@@ -1,10 +1,10 @@
 # Verification and Validation Plan
 
 **System:** mqttlogger
-**Feature:** 004-remove-init-legacy (updated; originally 002-mqttlogger-baseline)
-**Date:** 2026-05-12
-**Status:** DRAFT — updated by feature 004
-**Last Updated By:** se-requirements skill (2026-05-12)
+**Feature:** 004-remove-init-legacy (updated; originally 002-mqttlogger-baseline); 009-schema-evolution (updated)
+**Date:** 2026-05-12 (last updated); 2026-05-17 (feature 009 update)
+**Status:** DRAFT — updated by feature 009
+**Last Updated By:** se-nfr skill (feature 009)
 
 ---
 
@@ -50,6 +50,10 @@ A requirement without a verification method is incomplete by definition.
 | NFR-MAIN-001 | NFR | Test coverage ≥ 80% line coverage | T | UT+IT | pytest-cov reports ≥ 80% line coverage; enforcement deferred to CI/CD establishment | TBD | Planned |
 | NFR-PORT-001 | NFR | Deployable via Docker Compose on Linux amd64/arm64 | D | ST | docker compose up -d completes; logger connects, receives a test message, writes to DB | TBD | Planned |
 | NFR-INT-001 | NFR | DB schema owned by mqttlogger; all changes via migrations | I | — | Current schema fully described by version-controlled scripts; no out-of-band changes exist in the database | TBD | Planned |
+| NFR-PERF-003 | NFR | Composite index (location, measurement_type, captured_at) present after migration | I | ST | SHOW INDEX FROM sensorreadings confirms index; EXPLAIN on a filtered time-range query shows index used | Chris | Planned |
+| NFR-INT-002 | NFR | Non-logger consumers connect read-only; no write privileges | I | ST | SHOW GRANTS FOR read-only user shows SELECT only; companion monitor and dashboard configs use that user | Chris | Planned |
+| NFR-INT-003 | NFR | captured_at DATETIME NOT NULL present; currentdate/currenttime absent | I | ST | DESCRIBE sensorreadings: captured_at present, currentdate/currenttime absent; no downstream query uses TIMESTAMP() wrapper | Chris | Planned |
+| NFR-MAIN-002 | NFR | Migration script atomicity — no partial state on failure | I | — | Script reviewed: UPDATE backfill wrapped in transaction; spot-check SELECT before DROP COLUMN; non-zero exit on failure | Chris | Planned |
 
 ---
 
