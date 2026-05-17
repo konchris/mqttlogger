@@ -85,6 +85,20 @@ A requirement without a verification method is incomplete by definition.
 | FR-MON-006 | FR | Local push notification — fully LAN-only path to operator device | D | AT | Block outbound internet; verify notifications arrive on operator's iPhone on home Wi-Fi (requires physical device on home network — cannot be automated) | Chris | Planned |
 | FR-MON-007 | FR | Configurable monitoring parameters via environment variables | I | — | All parameters env-var sourced; no hardcoded thresholds | Chris | Planned |
 | FR-022 | FR | No dead code in mqttlogger/__init__.py | I | — | `mqttlogger/__init__.py` contains no callable definitions; codebase search finds zero callers for any removed symbol | Chris | Implemented |
+| FR-023 | FR | Migration adds `captured_at DATETIME NOT NULL` and backfills from TIMESTAMP(currentdate, currenttime) | I+T | ST | Script reviewed for correct SQL; post-migration DESCRIBE shows column; COUNT(*) WHERE captured_at IS NULL = 0 | Chris | Planned |
+| FR-024 | FR | Migration adds `location TEXT NOT NULL` and backfills from topic segments 2–3 | I+T | ST | Script reviewed; spot-check SELECT shows correct location values for all distinct topics | Chris | Planned |
+| FR-025 | FR | Migration adds `measurement_type TEXT NOT NULL` and backfills from final topic segment | I+T | ST | Script reviewed; spot-check SELECT shows correct measurement_type values | Chris | Planned |
+| FR-026 | FR | Migration creates composite index idx_loc_mtype_time on (location, measurement_type, captured_at) | I | ST | SHOW INDEX FROM sensorreadings confirms index exists in correct column order | Chris | Planned |
+| FR-027 | FR | Migration drops currentdate and currenttime columns | I+T | ST | Script reviewed; post-migration DESCRIBE confirms columns absent | Chris | Planned |
+| FR-028 | FR | SensorReading model declares captured_at DateTime NOT NULL; no currentdate/currenttime | I | — | data_model.py reviewed: Column(DateTime, nullable=False) for captured_at; Date/Time columns absent | Chris | Planned |
+| FR-029 | FR | SensorReading model declares location Text NOT NULL | I | — | data_model.py reviewed: Column(Text, nullable=False) for location | Chris | Planned |
+| FR-030 | FR | SensorReading model declares measurement_type Text NOT NULL | I | — | data_model.py reviewed: Column(Text, nullable=False) for measurement_type | Chris | Planned |
+| FR-031 | FR | on_message sets captured_at = datetime.now() on new SensorReading | T | IT | Publish test message; verify inserted row captured_at within 5 s of publish time | Chris | Planned |
+| FR-032 | FR | on_message sets location from topic segments 2+3 | T | IT | Publish test message on known topic; verify location = expected two-segment value | Chris | Planned |
+| FR-033 | FR | on_message sets measurement_type from final topic segment | T | IT | Publish test message on known topic; verify measurement_type = expected value | Chris | Planned |
+| FR-034 | FR | monitor.py query_active_sensors() uses captured_at; no TIMESTAMP() wrapper | I | — | monitor.py reviewed: no currentdate/currenttime or TIMESTAMP() in SQL strings | Chris | Planned |
+| FR-035 | FR | bootstrap_sensors.py uses DATE(captured_at); no currentdate | I | — | bootstrap_sensors.py reviewed: no currentdate in SQL strings | Chris | Planned |
+| FR-036 | FR | companion_monitor in docker-compose.yml uses read-only DB credentials | I | ST | docker-compose.yml reviewed: companion_monitor DB_USER differs from mqtt_logger; SHOW GRANTS confirms SELECT-only | Chris | Planned |
 
 ---
 
@@ -101,6 +115,7 @@ A requirement without a verification method is incomplete by definition.
 | SCN-005 | Broker temporarily unavailable | AT | After broker restart, logger reconnects automatically and resumes capture | Planned |
 | SCN-006 | HomeMatic startup zeros | AT | After CCU3 restart, spurious zeros are stored (or suppressed if RedMatic mitigation applied); no service interruption | Planned |
 | SCN-007 | Planned maintenance | AT | After docker compose down/up cycle, service resumes capture; operator confirms via DB inspection | Planned |
+| SCN-008 | Live schema migration | AT | Schema migration applied; spot-check row confirms captured_at, location, measurement_type correct; companion monitor healthy; new readings use new schema | Planned |
 
 ---
 
