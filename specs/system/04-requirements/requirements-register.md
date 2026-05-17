@@ -3,8 +3,8 @@
 **System:** mqttlogger
 **Feature:** 004-remove-init-legacy (updated; originally 002-mqttlogger-baseline); 009-schema-evolution (updated)
 **Date:** 2026-05-12 (last quality gate); 2026-05-17 (feature 009 update)
-**Status:** DRAFT — feature 009 requirements added; quality gate not yet run on new entries
-**Last Updated By:** se-requirements skill (feature 009)
+**Status:** DRAFT — feature 009 quality gate complete (PASS WITH WARNINGS)
+**Last Updated By:** se-req-quality skill (feature 009)
 
 ---
 
@@ -345,6 +345,20 @@ These requirements describe the passive monitoring capability added by the OPT-A
 | FR-MON-006 | PASS WITH WARNINGS | Singular: two sentences for same LAN-only constraint (acceptable) |
 | FR-MON-007 | PASS WITH WARNINGS | Singular: positive+negative form of same principle (acceptable) |
 | FR-022 | PASS | |
+| FR-023 | PASS WITH WARNINGS | Singular: ADD + POPULATE inseparable for NOT NULL column (acceptable) |
+| FR-024 | PASS WITH WARNINGS | Singular: ADD + POPULATE inseparable for NOT NULL column (acceptable) |
+| FR-025 | PASS WITH WARNINGS | Singular: ADD + POPULATE inseparable for NOT NULL column (acceptable) |
+| FR-026 | PASS | |
+| FR-027 | PASS WITH WARNINGS | Singular: drop two columns = one logical action (acceptable); Complete WARN resolved — text updated to specify explicit SQL null-check criterion |
+| FR-028 | PASS WITH WARNINGS | Singular: positive + negative form of same class property (acceptable) |
+| FR-029 | PASS | |
+| FR-030 | PASS | |
+| FR-031 | PASS WITH WARNINGS | Unambiguous WARN resolved — text updated to `datetime.now(timezone.utc)` |
+| FR-032 | PASS WITH WARNINGS | Complete: non-conforming topic behavior unspecified; mitigated by ASM-A-001 pre-deployment check (acceptable) |
+| FR-033 | PASS | |
+| FR-034 | PASS | |
+| FR-035 | PASS | |
+| FR-036 | PASS WITH WARNINGS | Singular: credentials + privilege level = one access-control policy (acceptable) |
 
 ---
 
@@ -435,7 +449,7 @@ NEED-STK-001-011 (trustworthy data).
 
 ### FR-027 — Migration: Drop Legacy Timestamp Columns
 
-**Statement:** The migration script shall drop the `currentdate` and `currenttime` columns from `sensorreadings` after all three new columns have been populated and verified.
+**Statement:** The migration script shall drop the `currentdate` and `currenttime` columns from `sensorreadings` after all three new columns have been populated and after executing `SELECT COUNT(*) FROM sensorreadings WHERE captured_at IS NULL` and confirming the result is zero.
 
 **Source:** SCN-008 Step 4; NFR-INT-003
 **Traced Need:** NEED-STK-001-008
@@ -487,13 +501,13 @@ NEED-STK-001-011 (trustworthy data).
 
 ### FR-031 — `on_message`: Populate `captured_at`
 
-**Statement:** The `on_message` handler in `mqttlogger/mqtt_client.py` shall set `captured_at` on each new `SensorReading` to `datetime.now()` at the time the MQTT message is received.
+**Statement:** The `on_message` handler in `mqttlogger/mqtt_client.py` shall set `captured_at` on each new `SensorReading` to `datetime.now(timezone.utc)` at the time the MQTT message is received.
 
 **Source:** SCN-008 Step 6; FR-002 (extends message parsing to new field)
 **Traced Need:** NEED-STK-001-001, NEED-STK-001-010
 **Priority:** Must Have
 **Verification Method:** Test (IT) — publish a test message; query the database for the inserted row; verify `captured_at` is a `DATETIME` value within 5 seconds of the publish time
-**IEEE 29148 Quality:** PASS
+**IEEE 29148 Quality:** PASS WITH WARNINGS — Unambiguous WARN resolved: text updated to `datetime.now(timezone.utc)` per se-req-quality recommendation
 **Status:** Planned
 
 ---
@@ -506,7 +520,7 @@ NEED-STK-001-011 (trustworthy data).
 **Traced Need:** NEED-STK-001-010
 **Priority:** Must Have
 **Verification Method:** Test (IT) — publish a test message on a known topic; verify the `location` column in the inserted row matches the expected two-segment value
-**IEEE 29148 Quality:** PASS
+**IEEE 29148 Quality:** PASS WITH WARNINGS — Complete: behavior for non-conforming topic (fewer than 4 segments) unspecified; mitigated by ASM-A-001 pre-deployment topic inventory (acceptable)
 **Status:** Planned
 
 ---

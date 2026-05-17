@@ -3,8 +3,8 @@
 **System:** mqttlogger
 **Feature:** 004-remove-init-legacy (reviewed; originally 002-mqttlogger-baseline); 009-schema-evolution (updated)
 **Date:** 2026-05-12 (last architecture review); 2026-05-17 (feature 009 update)
-**Status:** DRAFT — updated by feature 009 requirements
-**Last Updated By:** se-requirements skill (feature 009)
+**Status:** DRAFT — implementation references populated for FR-023..FR-036 (Phase 5 in progress)
+**Last Updated By:** implementation (feature 009)
 
 ---
 
@@ -88,20 +88,20 @@ Maps every requirement to its source artifact, the architectural element that im
 
 | Req ID | Short Description | Source Need | Design Element | V&V Method | V&V Stage | Status |
 | ------ | ----------------- | ----------- | -------------- | ---------- | --------- | ------ |
-| FR-023 | Migration adds captured_at DATETIME NOT NULL; backfills from TIMESTAMP(currentdate, currenttime) | NEED-STK-001-008, -010 | `db/migration-009-schema-evolution.sql` (to be created) | I+T | ST | Planned |
-| FR-024 | Migration adds location TEXT NOT NULL; backfills from topic segments 2–3 | NEED-STK-001-008, -010 | `db/migration-009-schema-evolution.sql` | I+T | ST | Planned |
-| FR-025 | Migration adds measurement_type TEXT NOT NULL; backfills from final topic segment | NEED-STK-001-008, -010 | `db/migration-009-schema-evolution.sql` | I+T | ST | Planned |
-| FR-026 | Migration creates composite index idx_loc_mtype_time | NEED-STK-001-010 | `db/migration-009-schema-evolution.sql` | I | ST | Planned |
-| FR-027 | Migration drops currentdate and currenttime columns | NEED-STK-001-008 | `db/migration-009-schema-evolution.sql` | I+T | ST | Planned |
-| FR-028 | SensorReading model: captured_at DateTime NOT NULL; no currentdate/currenttime | NEED-STK-001-008 | `mqttlogger/data_model.py::SensorReading` | I | — | Planned |
-| FR-029 | SensorReading model: location Text NOT NULL | NEED-STK-001-008 | `mqttlogger/data_model.py::SensorReading` | I | — | Planned |
-| FR-030 | SensorReading model: measurement_type Text NOT NULL | NEED-STK-001-008 | `mqttlogger/data_model.py::SensorReading` | I | — | Planned |
-| FR-031 | on_message sets captured_at = datetime.now() | NEED-STK-001-001, -010 | `mqttlogger/mqtt_client.py::on_message()` | T | IT | Planned |
-| FR-032 | on_message sets location from topic segments 2+3 | NEED-STK-001-010 | `mqttlogger/mqtt_client.py::on_message()` | T | IT | Planned |
-| FR-033 | on_message sets measurement_type from final topic segment | NEED-STK-001-010 | `mqttlogger/mqtt_client.py::on_message()` | T | IT | Planned |
-| FR-034 | monitor.py query_active_sensors() uses captured_at; no TIMESTAMP() | NEED-STK-001-002, -009 | `companion-monitor/monitor.py::query_active_sensors()` | I | — | Planned |
-| FR-035 | bootstrap_sensors.py uses DATE(captured_at); no currentdate | NEED-STK-001-009 | `companion-monitor/bootstrap_sensors.py` | I | — | Planned |
-| FR-036 | companion_monitor in docker-compose.yml uses read-only DB credentials | NEED-STK-001-008, -011 | `docker-compose.yml` companion_monitor env; MariaDB read-only user | I | ST | Planned |
+| FR-023 | Migration adds captured_at DATETIME NOT NULL; backfills from TIMESTAMP(currentdate, currenttime) | NEED-STK-001-008, -010 | `db/migration-009-schema-evolution.sql` | I+T | ST | Implemented — Task: T004; file: `db/migration-009-schema-evolution.sql` |
+| FR-024 | Migration adds location TEXT NOT NULL; backfills from topic segments 2–3 | NEED-STK-001-008, -010 | `db/migration-009-schema-evolution.sql` | I+T | ST | Implemented — Task: T004; file: `db/migration-009-schema-evolution.sql` |
+| FR-025 | Migration adds measurement_type TEXT NOT NULL; backfills from final topic segment | NEED-STK-001-008, -010 | `db/migration-009-schema-evolution.sql` | I+T | ST | Implemented — Task: T004; file: `db/migration-009-schema-evolution.sql` |
+| FR-026 | Migration creates composite index idx_loc_mtype_time | NEED-STK-001-010 | `db/migration-009-schema-evolution.sql` | I | ST | Implemented — Task: T004; file: `db/migration-009-schema-evolution.sql` |
+| FR-027 | Migration drops currentdate and currenttime columns | NEED-STK-001-008 | `db/migration-009-schema-evolution.sql` | I+T | ST | Implemented — Task: T004; file: `db/migration-009-schema-evolution.sql` |
+| FR-028 | SensorReading model: captured_at DateTime NOT NULL; no currentdate/currenttime | NEED-STK-001-008 | `mqttlogger/data_model.py::SensorReading` | I | — | Implemented — Task: T005; file: `mqttlogger/data_model.py` |
+| FR-029 | SensorReading model: location Text NOT NULL | NEED-STK-001-008 | `mqttlogger/data_model.py::SensorReading` | I | — | Implemented — Task: T005; file: `mqttlogger/data_model.py` |
+| FR-030 | SensorReading model: measurement_type Text NOT NULL | NEED-STK-001-008 | `mqttlogger/data_model.py::SensorReading` | I | — | Implemented — Task: T005; file: `mqttlogger/data_model.py` |
+| FR-031 | on_message sets captured_at = datetime.now(timezone.utc) | NEED-STK-001-001, -010 | `mqttlogger/mqtt_client.py::on_message()` | T | IT | Implemented — Task: T006, T012; file: `mqttlogger/mqtt_client.py`; test: `test_on_message_sets_captured_at_to_utc_now` |
+| FR-032 | on_message sets location from topic segments 2+3 | NEED-STK-001-010 | `mqttlogger/mqtt_client.py::on_message()` | T | IT | Implemented — Task: T006, T012; file: `mqttlogger/mqtt_client.py`; test: `test_on_message_sets_location_from_topic_segments` (corrected slice [1:3]) |
+| FR-033 | on_message sets measurement_type from final topic segment | NEED-STK-001-010 | `mqttlogger/mqtt_client.py::on_message()` | T | IT | Implemented — Task: T006, T012; file: `mqttlogger/mqtt_client.py`; test: `test_on_message_sets_measurement_type_from_final_segment` |
+| FR-034 | monitor.py query_active_sensors() uses captured_at; no TIMESTAMP() | NEED-STK-001-002, -009 | `companion-monitor/monitor.py::query_active_sensors()` | I | — | Implemented — Task: T007; file: `companion-monitor/monitor.py` |
+| FR-035 | bootstrap_sensors.py uses DATE(captured_at); no currentdate | NEED-STK-001-009 | `companion-monitor/bootstrap_sensors.py` | I | — | Implemented — Task: T008; file: `companion-monitor/bootstrap_sensors.py` |
+| FR-036 | companion_monitor in docker-compose.yml uses read-only DB credentials | NEED-STK-001-008, -011 | `docker-compose.yml` companion_monitor env; MariaDB read-only user | I | ST | Partially Implemented — Task: T009 complete (`docker-compose.yml` updated); T014 pending (MariaDB read-only user on sietchtabr) |
 
 ---
 

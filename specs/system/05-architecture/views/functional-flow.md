@@ -3,7 +3,8 @@
 **Viewtype:** Component-and-Connector — behaviour over time
 **Answers:** How do functions activate and interact for each key operational scenario?
 **Audience:** Systems engineers, testers
-**Related scenarios:** SCN-001, SCN-003 (with monitoring), SCN-005
+**Related scenarios:** SCN-001, SCN-003 (with monitoring), SCN-005, SCN-008 (live schema migration)
+**Last Updated:** 2026-05-17 (feature 009 — updated SCN-001 field names; added SCN-008 migration flow)
 
 ---
 
@@ -22,7 +23,7 @@ sequenceDiagram
     Sensor->>CCU3: value change (proprietary protocol)
     CCU3->>Broker: MQTT PUBLISH<br/>topic: environment/indoor/cellar/temperature<br/>payload: {"val": 14.3}
     Broker->>Logger: MQTT message delivered<br/>(subscription: environment/#)
-    Logger->>Logger: parse payload → SensorReading<br/>device=topic, value=14.3,<br/>currentdate=today, currenttime=now
+    Logger->>Logger: parse payload → SensorReading<br/>device=topic, reading=14.3,<br/>captured_at=now(UTC), location=indoor/cellar,<br/>measurement_type=temperature
     Logger->>DB: SQLAlchemy INSERT<br/>BEGIN … COMMIT
     DB-->>Logger: commit OK
     Logger->>Logger: log INFO "stored reading"
@@ -120,7 +121,39 @@ flowchart TD
 
 ---
 
-## Flow 5 — Graceful Shutdown (MODE-003)
+## Flow 5 — Live Schema Migration (SCN-008, Feature 009)
+
+Shows the operator-executed migration procedure that evolves the `sensorreadings` schema
+from the legacy two-column timestamp representation to the unified `captured_at` column.
+See ADR-008 for the decision rationale.
+
+```mermaid
+flowchart TD
+    START([Operator initiates maintenance window]) --> DRYRUN[Run IP-001 dry-run tasks\nSELECT DISTINCT device — confirm 4-level pattern\nPreview SELECT — verify backfill derivation\nNULL count check — currentdate/currenttime]
+    DRYRUN -->|any task fails| ABORT1([STOP — investigate topic anomalies\nbefore proceeding])
+    DRYRUN -->|all tasks pass — ASM-A-001..A-004 resolved| STAGE[Stage migration SQL on sietchtabr\ndb/migration-009-schema-evolution.sql]
+    STAGE --> DOWN[docker compose down\nCapture gap begins]
+    DOWN --> ADD[ALTER TABLE: ADD captured_at NULL\nADD location NULL\nADD measurement_type NULL]
+    ADD --> TXN[START TRANSACTION\nUPDATE SET captured_at = TIMESTAMP\nUPDATE SET location = SUBSTRING_INDEX x2\nUPDATE SET measurement_type = SUBSTRING_INDEX\nCOMMIT]
+    TXN --> NULLCHECK{SELECT COUNT WHERE\ncaptured_at IS NULL\nor location IS NULL\nor measurement_type IS NULL}
+    NULLCHECK -->|count > 0| ABORT2([STOP — backfill incomplete\nInvestigate NULL rows before DROP])
+    NULLCHECK -->|count = 0| MODIFY[ALTER TABLE: MODIFY captured_at NOT NULL\nMODIFY location NOT NULL\nMODIFY measurement_type NOT NULL]
+    MODIFY --> INDEX[CREATE INDEX idx_loc_mtype_time\non sensorreadings location, measurement_type, captured_at]
+    INDEX --> DROP[ALTER TABLE: DROP COLUMN currentdate\nDROP COLUMN currenttime]
+    DROP --> UP[docker compose up -d\nNew image with updated code deployed]
+    UP --> VERIFY[Spot-check new row in DB\nverify captured_at, location, measurement_type populated]
+    VERIFY -->|values correct| DONE([Migration complete\nCapture gap ends])
+    VERIFY -->|values missing or wrong| ROLLBACK([STOP — investigate\nCheck code deployment and image rebuild])
+```
+
+**Key properties of this flow:**
+- The UPDATE backfill is transactional; if interrupted, all three column updates roll back together
+- DDL (ADD/MODIFY/DROP COLUMN) auto-commits in MariaDB/InnoDB — the null-check is the gate between transactional backfill and irreversible schema changes
+- The stack-down window encompasses both the migration and the `docker compose up -d` with new code; no intermediate state where old code runs against new schema
+
+---
+
+## Flow 6 — Graceful Shutdown (MODE-003)
 
 ```mermaid
 flowchart TD

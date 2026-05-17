@@ -1,10 +1,10 @@
 # Architecture Documentation
 
 **System:** mqttlogger
-**Feature:** 004-remove-init-legacy (reviewed; originally 002-mqttlogger-baseline)
-**Date:** 2026-05-12
-**Status:** DRAFT — reviewed for feature 004; no structural changes required
-**Last Updated By:** se-architecture skill (feature 004 review)
+**Feature:** 009-schema-evolution (updated; originally 002-mqttlogger-baseline, reviewed through 004)
+**Date:** 2026-05-12 (original); 2026-05-17 (feature 009 update)
+**Status:** DRAFT — updated for feature 009 schema evolution
+**Last Updated By:** se-architecture skill (feature 009)
 **Notation:** C4 Model + Views and Beyond + arc42
 
 ---
@@ -36,6 +36,10 @@ The following requirements had the most significant influence on the structural 
 | No cloud dependency | Constraint | Push notifications must function on isolated LAN | Self-hosted ntfy instead of Telegram/Slack (ADR-005) |
 | Solo operation | Constraint | System must operate unattended for months | Monitoring stack added (ADR-002) to make faults visible |
 | No CCU3 changes | Constraint | Upstream sensor/broker layer is fixed | Architecture works with whatever MQTT topics CCU3 publishes |
+| NFR-INT-003 | NFR | `captured_at` must be native DATETIME NOT NULL on base table, not computed expression | OPT-A direct column migration (ADR-008); view-based approach eliminated |
+| NFR-PERF-003 | NFR | Composite index `(location, measurement_type, captured_at)` for filtered time-range queries | Index on base table via migration; cannot index view columns in MariaDB |
+| NFR-INT-002 | NFR | Non-logger consumers connect read-only; no write privileges | Dedicated `monitor_ro` MariaDB user (ADR-009); companion_monitor env updated |
+| NFR-MAIN-002 | NFR | Migration atomicity — no partial state on failure | UPDATE backfill in START TRANSACTION/COMMIT; null-check gate before irreversible DDL |
 
 ### 1.3 Quality Attribute Scenarios
 
@@ -61,7 +65,7 @@ Each Must Have NFR expressed as a stimulus-response scenario:
 | TC-002 | Single-host deployment (sietchtabr, consumer mini PC) — no multi-host redundancy | NFR-PORT-001, ConOps |
 | TC-003 | Docker Compose is the only supported orchestration mechanism | NFR-PORT-001, Constitution Principle III |
 | TC-004 | No cloud-dependent services — all components must function on an isolated home network | Explore summary, IP-001 hard constraint |
-| TC-005 | Python 3.10 runtime (EOL October 2026 — RISK-003) | Existing implementation |
+| TC-005 | Python 3.12 runtime (upgraded from 3.10 by feature 007-python312-upgrade) | Feature 007 |
 | TC-006 | MariaDB for persistence — schema owned by mqttlogger (NFR-INT-001) | Existing implementation |
 
 ### 2.2 Organisational Constraints
@@ -138,7 +142,7 @@ Six containers form the deployed stack:
 
 `heartbeat.py` implements `HeartbeatThread(threading.Thread, daemon=True)`. The thread sleeps for `heartbeat_interval_seconds`, wakes, issues `HTTP POST heartbeat_url`, and repeats. Activated only when `heartbeat_url` is present in config; otherwise the thread is not started. Daemon mode ensures it exits automatically with the process (ADR-006).
 
-`data_model.py` defines the `SensorReading` SQLAlchemy model: `id`, `device` (MQTT topic path), `value` (float), `captured_at` (UTC timestamp). This is the only schema definition for the `sensorreadings` table.
+`data_model.py` defines the `SensorReading` SQLAlchemy model: `id` (PK), `captured_at` (DateTime NOT NULL — UTC capture time), `location` (Text NOT NULL — MQTT topic segments 2+3, e.g. `indoor/attic`), `measurement_type` (Text NOT NULL — final topic segment, e.g. `temperature`), `device` (Text — full MQTT topic, canonical source retained for re-derivation), `reading` (Float). The `currentdate` and `currenttime` columns were removed by the feature 009 migration (ADR-008). This is the only schema definition for the `sensorreadings` table.
 
 `db_connection.py` provides `load_config_file()` (reads and validates `config.json`) and `create_connection_string()` (builds a SQLAlchemy MariaDB+pymysql connection string). Raises actionable errors on missing or invalid fields (NFR-USE-001).
 
@@ -169,6 +173,8 @@ Six containers form the deployed stack:
 **Sensor gap detection (OPT-B):** companion_monitor wakes every 5 minutes. `query_active_sensors()` returns the set of sensors that have published within the last 600 minutes. `run_check()` computes the difference against `monitored_sensors` (from `sensors.yml`). If a previously-active sensor is absent, and its ID is not already in `alerted_missing`, a silence alert is pushed to ntfy and the ID is added to `alerted_missing`. When the sensor resumes publishing (appears in the active set again), a recovery notification is pushed and the ID is removed from `alerted_missing`. This state-transition logic ensures exactly one alert per fault event regardless of how many poll cycles the fault spans (FR-MON-005). The maximum detection latency is 600 minutes (gap window) + up to 5 minutes (poll interval) = approximately 10 hours.
 
 **Startup (MODE-002):** Docker Compose brings up services in dependency order. MariaDB starts and passes its healthcheck (30 s timeout, 10 s interval). Only then do mqtt_logger and companion_monitor containers start. mqtt_logger loads config, creates the SQLAlchemy engine, registers the LWT, connects to the broker, subscribes, starts the heartbeat thread, and enters the paho loop. companion_monitor loads env vars, reads `sensors.yml`, and enters the poll loop.
+
+**Live schema migration (SCN-008, feature 009):** The operator brings the stack down, runs the migration SQL against the live MariaDB instance, then brings the stack up with the new image. The migration adds `captured_at`, `location`, and `measurement_type` columns, backfills all existing rows within a transaction, verifies via null-check SELECT, then enforces NOT NULL and creates the composite index before dropping the legacy `currentdate` and `currenttime` columns. The code changes (data_model.py, mqtt_client.py, monitor.py, bootstrap_sensors.py, docker-compose.yml) are deployed atomically with the schema — no intermediate state where old code runs against the new schema is possible. See ADR-008 and Flow 5 in functional-flow.md.
 
 **Graceful shutdown (MODE-003):** SIGTERM is received by the mqtt_logger container (from `docker compose down`). app.py signal handler calls `loop.stop()`. paho-mqtt publishes the LWT `"online"` message (configured will only fires on unexpected disconnect; on clean disconnect, the MQTT spec does not send the LWT — the status topic retains the last published value). The container exits with status 0. The heartbeat daemon thread exits automatically because it is a daemon thread. companion_monitor receives SIGTERM; Python exits the poll loop at the next sleep boundary.
 
@@ -208,6 +214,8 @@ All six containers run on a single physical host: `sietchtabr`, a consumer-grade
 | ADR-005 | ntfy as the Self-Hosted Push Notification Server | Accepted | FR-MON-006, No-cloud constraint |
 | ADR-006 | Heartbeat Implemented as Daemon Thread Inside mqtt_logger | Accepted | FR-013, FR-014, NFR-REL-001, RISK-016 |
 | ADR-007 | Static Sensor Classification via sensors.yml Exclusion List | Accepted | FR-MON-002, FR-MON-004, FR-MON-005, FR-MON-007 |
+| ADR-008 | Direct Column Migration for Schema Evolution | Accepted | NFR-INT-003, NFR-PERF-003, NFR-MAIN-002, FR-023..FR-027 |
+| ADR-009 | Read-Only Database Access for Companion Monitor | Accepted | NFR-INT-002, FR-036 |
 
 ---
 
@@ -223,6 +231,10 @@ How the architecture satisfies each Must Have NFR:
 | NFR-SEC-001 — No credentials in VCS | `config.json` is gitignored; `sensors.yml` is gitignored; credentials loaded exclusively from config file at runtime (FR-008); `.gitignore` verified | `.gitignore` inspected; RISK-002 tracks historical credential exposure pre-migration |
 | NFR-USE-002 — Complete log entries | Python `logging.Formatter` configured with `%(asctime)s %(levelname)s %(module)s %(funcName)s:%(lineno)d %(message)s`; applied to all handlers in app.py | Visual inspection of log output during IP-001 baseline |
 | NFR-PORT-001 — Docker Compose deployment | All 6 services defined in `docker-compose.yml`; single `docker compose up -d` starts the full stack; Linux amd64 verified on sietchtabr | IP-001 deployment successful; stack deployed and running |
+| NFR-INT-003 — `captured_at` as native DATETIME | OPT-A direct column migration (ADR-008) adds `captured_at DATETIME NOT NULL` directly to `sensorreadings`; `TIMESTAMP()` computation eliminated from all downstream queries | Post-migration: DESCRIBE sensorreadings; no TIMESTAMP() in monitor.py or bootstrap_sensors.py |
+| NFR-PERF-003 — Composite index | Migration creates `idx_loc_mtype_time ON sensorreadings(location, measurement_type, captured_at)` after backfill completes | Post-migration: SHOW INDEX FROM sensorreadings; EXPLAIN on filtered time-range query |
+| NFR-INT-002 — Read-only companion monitor access | Dedicated `monitor_ro` MariaDB user with GRANT SELECT only; companion_monitor docker-compose.yml uses MONITOR_DB_USER (ADR-009) | SHOW GRANTS FOR 'monitor_ro'@'%' confirms SELECT-only |
+| NFR-MAIN-002 — Migration atomicity | UPDATE backfill in START TRANSACTION/COMMIT; null-check SELECT acts as gate before MODIFY COLUMN and DROP COLUMN (which are non-transactional DDL) | Script reviewed; null-check result 0 confirmed before DDL proceeds |
 
 ---
 
@@ -238,11 +250,15 @@ Risks with architectural relevance (full register in `10-risk/risk-register.md`)
 | RISK-001 | No CI/CD pipeline | No automated verification of any architectural quality claim | Plan; TBD-003 |
 | RISK-013 | Silent sensor topology change (resolved by OPT-B, but gap window is up to 10 hours) | ADR-007 consequence; accepted at IP-002 | Monitor; gap window tuning if needed |
 | RISK-019 | DB schema may not be fully version-controlled | NFR-INT-001 not yet fully verifiable | Plan; schema audit needed |
+| RISK-026 | Schema migration and companion monitor code must be deployed atomically | Non-atomic deployment causes immediate crash | Plan; SCN-008 procedure enforces atomic stack-down/migrate/up sequence |
+| RISK-027 | No database backup before migration | Data loss if migration SQL contains a bug | Accept; IP-001 dry-run validates derivation before migration runs; data volume is low |
+| RISK-028 | Companion monitor used write-capable credentials | Closed by ADR-009 (feature 009) | Closed — read-only user created; docker-compose.yml updated |
+| RISK-029 | ASM-A-001: topic pattern assumption unvalidated | Incorrect backfill for non-4-level topics | Plan; TASK-A-001 dry-run must pass before migration runs |
 
 **Known technical debt:**
 
-- `mqttlogger/` test suite established by feature 003 (46 tests, 86% coverage); CI enforces 80% gate. Dead code in `__init__.py` being removed by feature 004, projecting ~93% coverage after that change. `companion-monitor/` still has no automated tests (RISK-024).
-- Python 3.10 reaching EOL October 2026 (RISK-003). Upgrade to 3.11+ before EOL.
+- `mqttlogger/` test suite established by feature 003; CI enforces 80% gate. `companion-monitor/` still has no automated tests (RISK-024).
+- Python 3.12 runtime (upgraded from 3.10 by feature 007). RISK-003 closed.
 - Historical credential exposure in Bitbucket/git history (RISK-002). Scrubbed with git filter-repo on 2026-05-11; both secrets replaced.
 - `sensors.yml` is not version-controlled (by design — deployment-specific data). No automated check that it is current with the deployed sensor topology.
 - companion_monitor has no health endpoint and no liveness signal of its own. A crashed companion_monitor is invisible to OPT-A (which monitors only mqtt_logger). This is a known gap: monitoring the monitor requires a separate mechanism not implemented in this phase.

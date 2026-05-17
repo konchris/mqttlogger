@@ -19,13 +19,13 @@ graph TD
     subgraph boundary["System Boundary — sietchtabr (Linux amd64)"]
         subgraph core["Core Capture Stack"]
             MQTT["eclipse-mosquitto\n[Message Broker]\nMQTT 3.1.1\nports: 1883, 9001"]
-            LOGGER["mqtt_logger\n[Application — Python 3.10]\nSubscribes to MQTT\nWrites to DB\nEmits heartbeat\nPublishes LWT"]
+            LOGGER["mqtt_logger\n[Application — Python 3.12]\nSubscribes to MQTT\nWrites to DB\nEmits heartbeat\nPublishes LWT"]
             DB["MariaDB\n[Database — MariaDB 10.x]\nStores sensorreadings\nport: 3306"]
         end
         subgraph monitoring["Monitoring Stack"]
             UK["uptime_kuma\n[Monitor — Node.js]\nHeartbeat watchdog\nFires DOWN alert\nport: 3001"]
             NTFY["ntfy\n[Notification Server — Go]\nPush delivery\nport: 8080"]
-            CM["companion_monitor\n[Application — Python 3.10]\nPolls DB for gaps\nDetects unknown sensors\nSends ntfy alerts"]
+            CM["companion_monitor\n[Application — Python 3.12]\nPolls DB for gaps (read-only)\nDetects unknown sensors\nSends ntfy alerts"]
         end
     end
 
@@ -35,7 +35,7 @@ graph TD
     LOGGER -->|"HTTP POST /api/push/token\n(monitoring_net)\nliveness heartbeat every 60s"| UK
     LOGGER -->|"MQTT PUBLISH\n'mqttlogger/status' — LWT + online\n(mqtt_net)"| MQTT
     UK -->|"HTTP POST /mqttlogger-alerts\n(monitoring_net)\nwhen heartbeat stops"| NTFY
-    CM -->|"SQL SELECT DISTINCT device\ntcp/3306 (mqtt_db)\nevery 5 min"| DB
+    CM -->|"SQL SELECT DISTINCT device\ntcp/3306 (mqtt_db)\nread-only user — SELECT only\nevery 5 min"| DB
     CM -->|"HTTP POST /mqttlogger-alerts\n(monitoring_net)\non gap or unknown sensor"| NTFY
     NTFY -->|"HTTP / WebSocket\n:8080 (home LAN only)"| IPHONE
     UK -->|"HTTP dashboard\n:3001 (home LAN)"| OPERATOR
@@ -62,7 +62,7 @@ Watches for the mqtt_logger heartbeat push. If no push arrives within 2× the co
 Self-hosted push server. Receives HTTP POST requests from both Uptime Kuma (OPT-A crash alerts) and companion_monitor (OPT-B gap/unknown alerts) and delivers them to the ntfy app on the operator's iPhone via the home LAN. Port 8080 exposed on the host. **LAN-only by design** — no cloud relay configured (RISK-023).
 
 ### companion_monitor — Sensor Gap Monitor (OPT-B)
-Polls MariaDB every 5 minutes. Checks two directions: (1) sensors in the known configuration that have not published within the 600-minute gap window → silence alert; (2) sensors publishing to the DB that are not in the known configuration and not on the exclusion list → unknown sensor alert. Maintains in-memory state to fire alerts on state transitions only. Reads sensor configuration from `sensors.yml` (mounted as a volume). Connects to both `mqtt_db` and `monitoring_net`.
+Polls MariaDB every 5 minutes. Checks two directions: (1) sensors in the known configuration that have not published within the 600-minute gap window → silence alert; (2) sensors publishing to the DB that are not in the known configuration and not on the exclusion list → unknown sensor alert. Maintains in-memory state to fire alerts on state transitions only. Reads sensor configuration from `sensors.yml` (mounted as a volume). Connects to both `mqtt_db` and `monitoring_net`. **Uses a dedicated read-only MariaDB user** (`monitor_ro`) with `SELECT`-only privileges — enforces least-privilege access per NFR-INT-002 and ADR-009. Database queries filter on `captured_at` (feature 009 schema).
 
 ---
 

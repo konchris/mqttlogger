@@ -1,10 +1,10 @@
 # Interface Control Document
 
 **System:** mqttlogger
-**Feature:** 004-remove-init-legacy (established; originally scoped for 002-mqttlogger-baseline)
-**Date:** 2026-05-12
+**Feature:** 009-schema-evolution (updated; originally 002-mqttlogger-baseline)
+**Date:** 2026-05-12 (original); 2026-05-17 (feature 009 update)
 **Status:** DRAFT
-**Last Updated By:** se-interfaces skill
+**Last Updated By:** se-interfaces skill (feature 009)
 
 ---
 
@@ -187,14 +187,15 @@ by mqttlogger (`data_model.py`); any schema change requires a migration script
 | Authentication | Database user credentials (username + password from MariaDB config) |
 | Encryption | None — plaintext MySQL on private LAN |
 
-#### Data Elements (sensorreadings schema)
+#### Data Elements (sensorreadings schema — post feature 009 migration)
 
 | Element | Type | Range/Values | Units | Description |
 | ------- | ---- | ------------ | ----- | ----------- |
 | id | Integer (PK) | autoincrement | N/A | Row identifier |
-| currentdate | Date | YYYY-MM-DD | N/A | Capture date (host clock, UTC offset not recorded) |
-| currenttime | Time | HH:MM:SS | N/A | Capture time (host clock, UTC offset not recorded) |
-| device | Text | MQTT topic path string | N/A | Full MQTT topic of the source sensor |
+| captured_at | DateTime NOT NULL | ISO 8601 datetime | N/A | Capture timestamp (UTC, `datetime.now(timezone.utc)` at receive time). Replaces legacy `currentdate` + `currenttime` columns dropped by feature 009 migration (ADR-008). |
+| location | Text NOT NULL | e.g. `indoor/attic`, `outdoor/garden` | N/A | Two-segment location derived from MQTT topic segments 2+3 (e.g. `environment/indoor/attic/temperature` → `indoor/attic`) |
+| measurement_type | Text NOT NULL | e.g. `temperature`, `humidity`, `motion` | N/A | Final MQTT topic segment; identifies the physical measurement |
+| device | Text | Full MQTT topic path string | N/A | Canonical MQTT topic; retained as source-of-truth for re-derivation |
 | reading | Float | any float | varies by sensor | Parsed sensor value (temperature, humidity, boolean cast to 0.0/1.0, etc.) |
 
 #### Error Handling
@@ -399,13 +400,14 @@ and the message is discarded; the logger does not exit (ADR-003).
 | Authentication | MariaDB username + password from `config.json` |
 | Encryption | None (internal Docker network) |
 
-#### Data Elements
+#### Data Elements (post feature 009 migration)
 
 | Element | Type | Range/Values | Units | Description |
 | ------- | ---- | ------------ | ----- | ----------- |
-| currentdate | Date | YYYY-MM-DD | N/A | `datetime.now().strftime("%Y-%m-%d")` at parse time (host UTC clock) |
-| currenttime | Time | HH:MM:SS | N/A | `datetime.now().strftime("%H:%M:%S")` at parse time |
-| device | Text | Full MQTT topic string | N/A | `message.topic` verbatim |
+| captured_at | DateTime NOT NULL | UTC datetime | N/A | `datetime.now(timezone.utc)` at message receive time (FR-031). Replaces `currentdate` + `currenttime` dropped by feature 009 migration (ADR-008). |
+| location | Text NOT NULL | e.g. `indoor/attic` | N/A | `'/'.join(message.topic.split('/')[2:4])` — MQTT topic segments 2+3 (FR-032) |
+| measurement_type | Text NOT NULL | e.g. `temperature` | N/A | `message.topic.split('/')[-1]` — final MQTT topic segment (FR-033) |
+| device | Text | Full MQTT topic string | N/A | `message.topic` verbatim; canonical source retained |
 | reading | Float | any float | varies | Parsed value from payload |
 
 #### Error Handling
@@ -550,7 +552,7 @@ ntfy HTTP API: https://docs.ntfy.sh/publish/. Uptime Kuma notification providers
 **Provider Ownership:** Owned
 **Consumer Ownership:** Owned
 **Status:** Draft
-**Requirement Source:** FR-MON-002, FR-MON-003, FR-MON-004, FR-MON-005
+**Requirement Source:** FR-MON-002, FR-MON-003, FR-MON-004, FR-MON-005, FR-034, FR-036
 
 #### Description
 
@@ -570,14 +572,14 @@ idle intervals).
 | Data Format | SQL SELECT; returns a result set of string values |
 | Direction | Bidirectional (query from consumer; result set from provider) |
 | Timing | Periodic; one query per `POLLING_INTERVAL_SECONDS` (default 300 s); synchronous blocking query |
-| Authentication | Database user credentials from environment variables (`DB_USER`, `DB_PASSWORD`) |
+| Authentication | Read-only MariaDB user credentials from environment variables (`MONITOR_DB_USER`, `MONITOR_DB_PASSWORD`); user has `SELECT`-only privileges on `sensorreadings` (ADR-009, FR-036) |
 | Encryption | None (internal Docker network) |
 
 #### Data Elements
 
 | Element | Type | Range/Values | Units | Description |
 | ------- | ---- | ------------ | ----- | ----------- |
-| SQL query | string | `SELECT DISTINCT device FROM sensorreadings WHERE TIMESTAMP(currentdate, currenttime) >= DATE_SUB(NOW(), INTERVAL %s MINUTE)` | N/A | Parameterized; parameter = `GAP_WINDOW_MINUTES` |
+| SQL query | string | `SELECT DISTINCT device FROM sensorreadings WHERE captured_at >= DATE_SUB(NOW(), INTERVAL %s MINUTE)` | N/A | Parameterized; parameter = `GAP_WINDOW_MINUTES`. Updated from `TIMESTAMP(currentdate, currenttime)` by feature 009 (FR-034). |
 | result set | set[string] | MQTT topic strings | N/A | Devices that have published within the gap window |
 | GAP_WINDOW_MINUTES | integer | 10 (default); 600 (production) | minutes | Gap detection window; configurable via env var |
 

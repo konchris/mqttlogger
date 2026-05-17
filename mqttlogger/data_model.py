@@ -8,7 +8,7 @@ __author__ = 'Christopher Espy'
 
 import logging
 
-from sqlalchemy import Column, Integer, Date, Time, Text, Float, create_engine
+from sqlalchemy import Column, Integer, DateTime, Text, Float, create_engine
 from sqlalchemy.orm import declarative_base
 
 from constants import ROOT_DIR
@@ -22,13 +22,14 @@ Base = declarative_base()
 class SensorReading(Base):
     __tablename__ = "sensorreadings"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    currentdate = Column(Date)
-    currenttime = Column(Time)
+    captured_at = Column(DateTime, nullable=False)
+    location = Column(Text, nullable=False)
+    measurement_type = Column(Text, nullable=False)
     device = Column(Text)
     reading = Column(Float)
 
     def __repr__(self):
-        return f"<Reading: {self.currentdate}T{self.currenttime} - {self.device} - {self.reading}>"
+        return f"<Reading: {self.captured_at} - {self.device} - {self.reading}>"
 
 
 def create():

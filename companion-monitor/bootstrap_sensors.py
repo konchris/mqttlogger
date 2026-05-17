@@ -34,7 +34,7 @@ LOOKBACK_DAYS = int(os.environ.get("LOOKBACK_DAYS", "30"))
 SQL = """
     SELECT DISTINCT device
     FROM sensorreadings
-    WHERE currentdate >= %s
+    WHERE DATE(captured_at) >= %s
     ORDER BY device
 """
 

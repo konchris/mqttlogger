@@ -7,7 +7,7 @@
 __author__ = 'Christopher Espy'
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -97,10 +97,13 @@ def on_message(client, userdata, message):
 
     module_logger.debug("The converted message payload is: %s" % message_payload)
 
-    new_reading = SensorReading(currentdate=datetime.now().strftime("%Y-%m-%d"),
-                                currenttime=datetime.now().strftime("%H:%M:%S"),
-                                device=message.topic,
-                                reading=float(message_payload))
+    new_reading = SensorReading(
+        captured_at=datetime.now(timezone.utc),
+        location='/'.join(message.topic.split('/')[1:3]),
+        measurement_type=message.topic.split('/')[-1],
+        device=message.topic,
+        reading=float(message_payload),
+    )
     try:
         client.insert(new_reading)
     except Exception as exc:
