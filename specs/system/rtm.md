@@ -3,7 +3,7 @@
 **System:** mqttlogger
 **Feature:** 004-remove-init-legacy (reviewed; originally 002-mqttlogger-baseline); 009-schema-evolution (updated)
 **Date:** 2026-05-12 (last architecture review); 2026-05-17 (feature 009 update)
-**Status:** DRAFT — implementation references populated for FR-023..FR-036 (Phase 5 in progress)
+**Status:** DRAFT — implementation references complete for FR-023..FR-036; deployment complete on sietchtabr (2026-05-17); Phase 5 gate PASS
 **Last Updated By:** implementation (feature 009)
 
 ---
@@ -101,7 +101,7 @@ Maps every requirement to its source artifact, the architectural element that im
 | FR-033 | on_message sets measurement_type from final topic segment | NEED-STK-001-010 | `mqttlogger/mqtt_client.py::on_message()` | T | IT | Implemented — Task: T006, T012; file: `mqttlogger/mqtt_client.py`; test: `test_on_message_sets_measurement_type_from_final_segment` |
 | FR-034 | monitor.py query_active_sensors() uses captured_at; no TIMESTAMP() | NEED-STK-001-002, -009 | `companion-monitor/monitor.py::query_active_sensors()` | I | — | Implemented — Task: T007; file: `companion-monitor/monitor.py` |
 | FR-035 | bootstrap_sensors.py uses DATE(captured_at); no currentdate | NEED-STK-001-009 | `companion-monitor/bootstrap_sensors.py` | I | — | Implemented — Task: T008; file: `companion-monitor/bootstrap_sensors.py` |
-| FR-036 | companion_monitor in docker-compose.yml uses read-only DB credentials | NEED-STK-001-008, -011 | `docker-compose.yml` companion_monitor env; MariaDB read-only user | I | ST | Partially Implemented — Task: T009 complete (`docker-compose.yml` updated); T014 pending (MariaDB read-only user on sietchtabr) |
+| FR-036 | companion_monitor in docker-compose.yml uses read-only DB credentials | NEED-STK-001-008, -011 | `docker-compose.yml` companion_monitor env; MariaDB read-only user | I | ST | Implemented — Task: T009, T014; `docker-compose.yml` uses MONITOR_DB_USER/MONITOR_DB_PASSWORD; `monitor_ro` user created on sietchtabr with SELECT-only on sensorreadings |
 
 ---
 

@@ -3,7 +3,7 @@
 **System:** mqttlogger
 **Feature:** 004-remove-init-legacy (updated; originally 002-mqttlogger-baseline); 009-schema-evolution (updated)
 **Date:** 2026-05-12 (last quality gate); 2026-05-17 (feature 009 update)
-**Status:** DRAFT — feature 009 quality gate complete (PASS WITH WARNINGS)
+**Status:** DRAFT — feature 009 implementation complete; all FR-023..FR-036 implemented and deployed on sietchtabr (2026-05-17)
 **Last Updated By:** se-req-quality skill (feature 009)
 
 ---
@@ -302,20 +302,20 @@ These requirements describe the passive monitoring capability added by the OPT-A
 | FR-MON-006 | — | — | NFR-PORT-001 | Implemented |
 | FR-MON-007 | — | — | NFR-SEC-001 | Implemented |
 | FR-022 | — | — | NFR-MAIN-001 | Implemented |
-| FR-023 | SCN-008 | — | NFR-INT-003, NFR-MAIN-002 | Planned |
-| FR-024 | SCN-008 | — | NFR-INT-003 | Planned |
-| FR-025 | SCN-008 | — | NFR-INT-003 | Planned |
-| FR-026 | SCN-008 | — | NFR-PERF-003 | Planned |
-| FR-027 | SCN-008 | — | NFR-INT-003 | Planned |
-| FR-028 | SCN-008 | — | NFR-INT-003 | Planned |
-| FR-029 | SCN-008 | — | NFR-INT-003 | Planned |
-| FR-030 | SCN-008 | — | NFR-INT-003 | Planned |
-| FR-031 | SCN-008 | — | NFR-PERF-002 | Planned |
-| FR-032 | SCN-008 | — | NFR-INT-003 | Planned |
-| FR-033 | SCN-008 | — | NFR-INT-003 | Planned |
-| FR-034 | SCN-008 | RISK-026 | NFR-INT-003 | Planned |
-| FR-035 | SCN-008 | RISK-026 | NFR-INT-003 | Planned |
-| FR-036 | — | RISK-028 | NFR-INT-002 | Planned |
+| FR-023 | SCN-008 | — | NFR-INT-003, NFR-MAIN-002 | Implemented |
+| FR-024 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-025 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-026 | SCN-008 | — | NFR-PERF-003 | Implemented |
+| FR-027 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-028 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-029 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-030 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-031 | SCN-008 | — | NFR-PERF-002 | Implemented |
+| FR-032 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-033 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-034 | SCN-008 | RISK-026 | NFR-INT-003 | Implemented |
+| FR-035 | SCN-008 | RISK-026 | NFR-INT-003 | Implemented |
+| FR-036 | — | RISK-028 | NFR-INT-002 | Implemented |
 
 ---
 
@@ -404,7 +404,7 @@ NEED-STK-001-011 (trustworthy data).
 **Priority:** Must Have
 **Verification Method:** Inspection + Test — inspect migration script for correct SQL; post-migration: `DESCRIBE sensorreadings` confirms `captured_at DATETIME NOT NULL` present; `SELECT COUNT(*) FROM sensorreadings WHERE captured_at IS NULL` returns 0
 **IEEE 29148 Quality:** PASS WITH WARNINGS — "add + populate" are inseparable for a NOT NULL column (acceptable per FR-011 precedent)
-**Status:** Planned
+**Status:** Implemented
 
 ---
 
@@ -417,7 +417,7 @@ NEED-STK-001-011 (trustworthy data).
 **Priority:** Must Have
 **Verification Method:** Inspection + Test — inspect migration script for correct SQL expression; post-migration: spot-check `SELECT device, location FROM sensorreadings LIMIT 20` and verify derivation is correct for all observed topics
 **IEEE 29148 Quality:** PASS WITH WARNINGS — "add + populate" inseparable for NOT NULL (acceptable)
-**Status:** Planned
+**Status:** Implemented
 
 ---
 
@@ -430,7 +430,7 @@ NEED-STK-001-011 (trustworthy data).
 **Priority:** Must Have
 **Verification Method:** Inspection + Test — inspect migration script for correct SQL expression; post-migration: spot-check `SELECT device, measurement_type FROM sensorreadings LIMIT 20` and verify correctness
 **IEEE 29148 Quality:** PASS WITH WARNINGS — "add + populate" inseparable for NOT NULL (acceptable)
-**Status:** Planned
+**Status:** Implemented
 
 ---
 
@@ -456,7 +456,7 @@ NEED-STK-001-011 (trustworthy data).
 **Priority:** Must Have
 **Verification Method:** Inspection + Test — inspect migration script for DROP COLUMN statements positioned after backfill; post-migration: `DESCRIBE sensorreadings` confirms neither `currentdate` nor `currenttime` is present
 **IEEE 29148 Quality:** PASS WITH WARNINGS — "drop currentdate and currenttime" is two columns, one logical action (acceptable)
-**Status:** Planned
+**Status:** Implemented
 
 ---
 
@@ -469,7 +469,7 @@ NEED-STK-001-011 (trustworthy data).
 **Priority:** Must Have
 **Verification Method:** Inspection — `data_model.py` reviewed: `Column(DateTime, nullable=False)` present for `captured_at`; `Column(Date, ...)` and `Column(Time, ...)` absent
 **IEEE 29148 Quality:** PASS WITH WARNINGS — positive + negative form of same class property (acceptable per FR-008 precedent)
-**Status:** Planned
+**Status:** Implemented
 
 ---
 
@@ -482,7 +482,7 @@ NEED-STK-001-011 (trustworthy data).
 **Priority:** Must Have
 **Verification Method:** Inspection — `data_model.py` reviewed: `Column(Text, nullable=False)` present for `location`
 **IEEE 29148 Quality:** PASS
-**Status:** Planned
+**Status:** Implemented
 
 ---
 
@@ -495,7 +495,7 @@ NEED-STK-001-011 (trustworthy data).
 **Priority:** Must Have
 **Verification Method:** Inspection — `data_model.py` reviewed: `Column(Text, nullable=False)` present for `measurement_type`
 **IEEE 29148 Quality:** PASS
-**Status:** Planned
+**Status:** Implemented
 
 ---
 
@@ -508,7 +508,7 @@ NEED-STK-001-011 (trustworthy data).
 **Priority:** Must Have
 **Verification Method:** Test (IT) — publish a test message; query the database for the inserted row; verify `captured_at` is a `DATETIME` value within 5 seconds of the publish time
 **IEEE 29148 Quality:** PASS WITH WARNINGS — Unambiguous WARN resolved: text updated to `datetime.now(timezone.utc)` per se-req-quality recommendation
-**Status:** Planned
+**Status:** Implemented
 
 ---
 
@@ -521,7 +521,7 @@ NEED-STK-001-011 (trustworthy data).
 **Priority:** Must Have
 **Verification Method:** Test (IT) — publish a test message on a known topic; verify the `location` column in the inserted row matches the expected two-segment value
 **IEEE 29148 Quality:** PASS WITH WARNINGS — Complete: behavior for non-conforming topic (fewer than 4 segments) unspecified; mitigated by ASM-A-001 pre-deployment topic inventory (acceptable)
-**Status:** Planned
+**Status:** Implemented
 
 ---
 
@@ -534,7 +534,7 @@ NEED-STK-001-011 (trustworthy data).
 **Priority:** Must Have
 **Verification Method:** Test (IT) — publish a test message on a known topic; verify the `measurement_type` column in the inserted row matches the expected value
 **IEEE 29148 Quality:** PASS
-**Status:** Planned
+**Status:** Implemented
 
 ---
 
@@ -547,7 +547,7 @@ NEED-STK-001-011 (trustworthy data).
 **Priority:** Must Have
 **Verification Method:** Inspection — `companion-monitor/monitor.py` reviewed: no reference to `currentdate`, `currenttime`, or `TIMESTAMP()` in any SQL string; `captured_at` used as time filter
 **IEEE 29148 Quality:** PASS
-**Status:** Planned
+**Status:** Implemented
 
 ---
 
@@ -560,7 +560,7 @@ NEED-STK-001-011 (trustworthy data).
 **Priority:** Must Have
 **Verification Method:** Inspection — `companion-monitor/bootstrap_sensors.py` reviewed: no reference to `currentdate` in any SQL string; `DATE(captured_at)` used as date filter
 **IEEE 29148 Quality:** PASS
-**Status:** Planned
+**Status:** Implemented
 
 ---
 
@@ -573,7 +573,7 @@ NEED-STK-001-011 (trustworthy data).
 **Priority:** Must Have
 **Verification Method:** Inspection — `docker-compose.yml` reviewed: `companion_monitor` environment specifies a different `DB_USER` than `mqtt_logger`; `SHOW GRANTS FOR '<db_user>'@'%'` on `sietchtabr` confirms SELECT-only on `sensorreadings`
 **IEEE 29148 Quality:** PASS
-**Status:** Planned
+**Status:** Implemented
 
 ---
 

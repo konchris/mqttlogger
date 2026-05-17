@@ -140,9 +140,9 @@ tasks complete and CI green on feature branch.
 populated on new rows; `DESCRIBE sensorreadings` shows no `currentdate` or `currenttime`;
 `SHOW INDEX` shows `idx_loc_mtype_time`; companion_monitor logs show successful poll cycle.
 
-- [ ] T014 On sietchtabr: create read-only MariaDB user inside running `mariadb` container: `CREATE USER 'monitor_ro'@'%' IDENTIFIED BY '<password>'; GRANT SELECT ON mqttlogger.sensorreadings TO 'monitor_ro'@'%'; FLUSH PRIVILEGES;` — infrastructure prerequisite for FR-036
-- [ ] T015 On sietchtabr: stage `db/migration-009-schema-evolution.sql`; execute SCN-008 migration procedure: `docker compose down` → run migration SQL inside mariadb container → verify null-check returns 0 → `docker compose up -d` — satisfies SCN-008
-- [ ] T016 On sietchtabr: post-migration verification: `DESCRIBE sensorreadings` (no currentdate/currenttime); `SHOW INDEX FROM sensorreadings` (idx_loc_mtype_time present); spot-check new rows for captured_at, location, measurement_type; `docker compose logs companion_monitor` shows successful poll cycle
+- [x] T014 On sietchtabr: create read-only MariaDB user inside running `mariadb` container: `CREATE USER 'monitor_ro'@'%' IDENTIFIED BY '<password>'; GRANT SELECT ON mqttlogger.sensorreadings TO 'monitor_ro'@'%'; FLUSH PRIVILEGES;` — infrastructure prerequisite for FR-036
+- [x] T015 On sietchtabr: stage `db/migration-009-schema-evolution.sql`; execute SCN-008 migration procedure: `docker compose down` → run migration SQL inside mariadb container → verify null-check returns 0 → `docker compose up -d` — satisfies SCN-008
+- [x] T016 On sietchtabr: post-migration verification: `DESCRIBE sensorreadings` (no currentdate/currenttime); `SHOW INDEX FROM sensorreadings` (idx_loc_mtype_time present); spot-check new rows for captured_at, location, measurement_type; `docker compose logs companion_monitor` shows successful poll cycle
 
 ---
 
