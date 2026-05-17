@@ -16,13 +16,22 @@ Home automation sensor logger. HomeMatic IP sensors publish via CCU3/RedMatic ov
 
 ## Current state
 
-Active feature branch: `feature/008-grafana-dashboard` — SE Phase 1 complete; OPT-A (Grafana) and OPT-B (Metabase) under 24-hour parallel evaluation; IP-001 pending.
+**Active feature branch: `feature/009-schema-evolution`** — SE Phase 1 in progress (W-003 schema migration).
 
-Next candidates (after 008):
+**Paused: `feature/008-grafana-dashboard`** — SE Phase 1 complete; OPT-A (Grafana) and OPT-B (Metabase) docker-compose setup committed; IP-001 evaluation deferred until schema is clean. Resumes after 009 merges; 008 will rebase onto updated develop and rebuild dashboard queries against the new schema.
+
+**Decision record (2026-05-17):** 009 was promoted ahead of 008 because a clean schema removes the ergonomic advantage of 3rd-party dashboard tools (Grafana/Metabase), making a homegrown dashboard a genuine option. Evaluating dashboard tools before the schema is clean would bias the comparison.
+
+**W-003 scope (resolved):**
+- Merge `currentdate` (Date) + `currenttime` (Time) → `captured_at DATETIME`
+- Add `location TEXT` (derived from MQTT topic levels 3–4, e.g. `indoor/attic`)
+- Add `measurement_type TEXT` (derived from MQTT topic level 5, e.g. `temperature`)
+- Keep `device TEXT` (full MQTT topic) — retained as canonical source; a single location can have multiple devices with the same measurement type (e.g. thermostat + radiators all reporting temperature)
+
+Next candidates (after 009 + 008):
 
 - **RISK-012**: evaluate RedMatic startup zero suppression (OI-004)
 - **RISK-015**: configure BIOS power-restore on sietchtabr (OI-001)
-- **W-003**: schema evolution — merge `currentdate`+`currenttime` into a single `captured_at DATETIME` column (improves Grafana compatibility, enables direct indexing, eliminates `TIMESTAMP()` workaround in every panel query); consider also splitting `device` (full MQTT topic) into `location` + `measurement_type` columns for cleaner filtering — evaluate trade-offs before committing
 
 W-001 and W-002 were completed in feature `006-log-and-topic-fixes` (merged 2026-05-16).
 
@@ -126,4 +135,4 @@ CI: GitHub Actions (`.github/workflows/ci.yml`) — lint (ruff) + test + coverag
 
 The PR is opened only after all four conditions are met. The CI gate-check job enforces condition 2.
 
-No active feature branch.
+Active feature: `feature/009-schema-evolution` (W-003 schema migration). Paused: `feature/008-grafana-dashboard`.
