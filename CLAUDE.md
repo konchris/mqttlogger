@@ -16,10 +16,13 @@ Home automation sensor logger. HomeMatic IP sensors publish via CCU3/RedMatic ov
 
 ## Current state
 
-No active feature branch. Next candidates:
+Active feature branch: `feature/008-grafana-dashboard` — SE Phase 1 complete; OPT-A (Grafana) and OPT-B (Metabase) under 24-hour parallel evaluation; IP-001 pending.
+
+Next candidates (after 008):
 
 - **RISK-012**: evaluate RedMatic startup zero suppression (OI-004)
 - **RISK-015**: configure BIOS power-restore on sietchtabr (OI-001)
+- **W-003**: schema evolution — merge `currentdate`+`currenttime` into a single `captured_at DATETIME` column (improves Grafana compatibility, enables direct indexing, eliminates `TIMESTAMP()` workaround in every panel query); consider also splitting `device` (full MQTT topic) into `location` + `measurement_type` columns for cleaner filtering — evaluate trade-offs before committing
 
 W-001 and W-002 were completed in feature `006-log-and-topic-fixes` (merged 2026-05-16).
 
