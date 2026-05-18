@@ -25,8 +25,9 @@ def test_tablename():
 
 def test_repr_contains_device_and_reading():
     r = SensorReading(
-        currentdate=datetime.date(2026, 5, 10),
-        currenttime=datetime.time(12, 0, 0),
+        captured_at=datetime.datetime(2026, 5, 10, 12, 0, 0),
+        location="indoor/kitchen",
+        measurement_type="temperature",
         device="environment/indoor/kitchen/temperature",
         reading=21.5,
     )
@@ -37,8 +38,9 @@ def test_repr_contains_device_and_reading():
 
 def test_commit_and_query(sqlite_session):
     r = SensorReading(
-        currentdate=datetime.date(2026, 5, 10),
-        currenttime=datetime.time(8, 30, 0),
+        captured_at=datetime.datetime(2026, 5, 10, 8, 30, 0),
+        location="indoor/bedroom",
+        measurement_type="humidity",
         device="environment/indoor/bedroom/humidity",
         reading=55.0,
     )
@@ -55,14 +57,16 @@ def test_commit_and_query(sqlite_session):
 
 def test_id_is_autoincrement(sqlite_session):
     r1 = SensorReading(
-        currentdate=datetime.date(2026, 5, 10),
-        currenttime=datetime.time(9, 0, 0),
+        captured_at=datetime.datetime(2026, 5, 10, 9, 0, 0),
+        location="outdoor/patio",
+        measurement_type="temperature",
         device="environment/outdoor/patio/temperature",
         reading=18.0,
     )
     r2 = SensorReading(
-        currentdate=datetime.date(2026, 5, 10),
-        currenttime=datetime.time(9, 5, 0),
+        captured_at=datetime.datetime(2026, 5, 10, 9, 5, 0),
+        location="outdoor/patio",
+        measurement_type="temperature",
         device="environment/outdoor/patio/temperature",
         reading=18.2,
     )
@@ -97,8 +101,9 @@ def mariadb_session():
 
 def test_mariadb_roundtrip(mariadb_session):
     r = SensorReading(
-        currentdate=datetime.date(2026, 5, 10),
-        currenttime=datetime.time(10, 0, 0),
+        captured_at=datetime.datetime(2026, 5, 10, 10, 0, 0),
+        location="indoor/attic",
+        measurement_type="humidity",
         device="environment/indoor/attic/humidity",
         reading=72.3,
     )

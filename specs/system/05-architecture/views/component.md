@@ -4,6 +4,7 @@
 **Answers:** How are mqtt_logger and companion_monitor internally structured?
 **Audience:** Developers, detailed designers
 **Related NFRs:** NFR-USE-002, NFR-REL-001, NFR-SEC-001
+**Last Updated:** 2026-05-17 (feature 009 — updated schema references)
 
 Only containers with significant internal complexity receive a Component view. `eclipse-mosquitto`, `mariadb`, `uptime_kuma`, and `ntfy` are third-party images with no owned internal structure.
 
@@ -44,7 +45,7 @@ graph TD
 
 **heartbeat.py** — Background daemon thread. Loops forever: sleep N seconds, HTTP POST to the configured Uptime Kuma push URL. Exits automatically when the main process exits (daemon thread). No state; no retry logic on failed push (transient ntfy/UK failures are tolerated).
 
-**data_model.py** — SQLAlchemy declarative model for the `sensorreadings` table. Fields: `id` (PK), `device` (topic path), `currentdate`, `currenttime`, `value`, `field1`–`field4`. The schema is owned by this model; changes require a migration script (NFR-INT-001).
+**data_model.py** — SQLAlchemy declarative model for the `sensorreadings` table. Fields: `id` (PK), `captured_at` (DATETIME NOT NULL), `location` (TEXT NOT NULL — topic segments 2+3), `measurement_type` (TEXT NOT NULL — final topic segment), `device` (TEXT — full MQTT topic, canonical source), `reading` (FLOAT). The `currentdate` and `currenttime` columns were removed by the feature 009 migration. The schema is owned by this model; changes require a migration script (NFR-INT-001). See ADR-008.
 
 **db_connection.py** — Configuration loading and connection string construction. `load_config_file()` reads `config.json` and raises descriptive errors on missing/invalid fields (NFR-USE-001). `create_connection_string()` builds the SQLAlchemy connection URL from the loaded config.
 
@@ -86,7 +87,7 @@ graph TD
 
 **run_check()** — Core detection logic. Calls `query_active_sensors()` to get the set of devices that have published within `GAP_WINDOW_MINUTES`. Computes set differences to find newly missing, newly recovered, newly unknown, and newly resolved sensors. Fires notifications only on state transitions. Logs at INFO on state change; demotes to DEBUG on quiet cycles.
 
-**query_active_sensors()** — Single SQL query: `SELECT DISTINCT device FROM sensorreadings WHERE TIMESTAMP(currentdate, currenttime) >= DATE_SUB(NOW(), INTERVAL N MINUTE)`. Returns a Python set of device topic strings.
+**query_active_sensors()** — Single SQL query: `SELECT DISTINCT device FROM sensorreadings WHERE captured_at >= DATE_SUB(NOW(), INTERVAL N MINUTE)`. Returns a Python set of device topic strings. The legacy `TIMESTAMP(currentdate, currenttime)` expression was replaced by the direct `captured_at` column in feature 009 (FR-034).
 
 **push_notification()** — HTTP POST to the configured `NTFY_URL`. Silently logs a warning and returns if `NTFY_URL` is empty. Logs delivery errors but does not retry.
 

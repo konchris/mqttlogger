@@ -1,3 +1,4 @@
+from datetime import datetime, timezone, timedelta
 from unittest.mock import MagicMock, patch
 
 
@@ -88,3 +89,48 @@ def test_insert_db_error_does_not_raise():
         patch("mqttlogger.mqtt_client.sessionmaker", return_value=factory),
     ):
         insert(reading)  # must not raise
+
+
+# --- FR-031, FR-032, FR-033: new field population ----------------------------
+
+
+def test_on_message_sets_captured_at_to_utc_now():
+    """FR-031: captured_at set to datetime.now(timezone.utc) at message receipt."""
+    client = MagicMock()
+    msg = _make_message("environment/indoor/attic/temperature", b"21.5")
+    before = datetime.now(timezone.utc)
+    on_message(client, None, msg)
+    after = datetime.now(timezone.utc)
+    reading = client.insert.call_args[0][0]
+    assert reading.captured_at is not None
+    # captured_at must be timezone-aware and within the before/after window
+    assert reading.captured_at.tzinfo is not None
+    assert before - timedelta(seconds=1) <= reading.captured_at <= after + timedelta(seconds=1)
+
+
+def test_on_message_sets_location_from_topic_segments():
+    """FR-032: location derived from topic segments 2+3 (joined by '/')."""
+    client = MagicMock()
+    msg = _make_message("environment/indoor/attic/temperature", b"21.5")
+    on_message(client, None, msg)
+    reading = client.insert.call_args[0][0]
+    assert reading.location == "indoor/attic"
+
+
+def test_on_message_sets_measurement_type_from_final_segment():
+    """FR-033: measurement_type is the final slash-delimited topic segment."""
+    client = MagicMock()
+    msg = _make_message("environment/indoor/attic/temperature", b"21.5")
+    on_message(client, None, msg)
+    reading = client.insert.call_args[0][0]
+    assert reading.measurement_type == "temperature"
+
+
+def test_on_message_location_and_type_for_outdoor_humidity():
+    """FR-032 + FR-033: different topic path derives correctly."""
+    client = MagicMock()
+    msg = _make_message("environment/outdoor/patio/humidity", b"65.0")
+    on_message(client, None, msg)
+    reading = client.insert.call_args[0][0]
+    assert reading.location == "outdoor/patio"
+    assert reading.measurement_type == "humidity"

@@ -1,10 +1,10 @@
 # Quality Attributes and Non-Functional Requirements
 
 **System:** mqttlogger
-**Feature:** 002-mqttlogger-baseline
-**Date:** 2026-05-09
+**Feature:** 002-mqttlogger-baseline (created); 009-schema-evolution (updated)
+**Date:** 2026-05-09 (created); 2026-05-17 (updated)
 **Status:** DRAFT
-**Last Updated By:** se-nfr skill
+**Last Updated By:** se-nfr skill (feature 009)
 
 ---
 
@@ -14,6 +14,7 @@
 |--------|----------|-------------------|----------|---------------------|--------|
 | NFR-PERF-001 | Performance | Message completeness — no drops due to processing backlog | Must Have | Test | Open |
 | NFR-PERF-002 | Performance | Timestamp fidelity within sensor sampling interval | Must Have | Analysis | Open |
+| NFR-PERF-003 | Performance | Composite index `(location, measurement_type, captured_at)` for filtered time-range queries | Must Have | Inspection | Open |
 | NFR-REL-001 | Reliability | Automatic recovery from all software faults without operator intervention | Must Have | Demonstration | Open |
 | NFR-REL-002 | Reliability | Recovery time ≤ 60 seconds after container crash | Must Have | Test | Open |
 | NFR-SEC-001 | Security | Credentials not stored in version control | Must Have | Inspection | Open |
@@ -22,6 +23,9 @@
 | NFR-MAIN-001 | Maintainability | Automated test coverage ≥ 80% line coverage | Should Have | Test | Open |
 | NFR-PORT-001 | Portability | Deployable via Docker Compose on Linux (amd64/arm64) only | Must Have | Demonstration | Open |
 | NFR-INT-001 | Interoperability | Database schema owned by mqttlogger; all changes via migration scripts | Must Have | Inspection | Open |
+| NFR-INT-002 | Interoperability | Non-logger consumers connect to MariaDB read-only; no writes permitted | Must Have | Inspection | Open |
+| NFR-INT-003 | Interoperability | `captured_at` directly usable as DATETIME; no computed expressions required in downstream queries | Must Have | Inspection | Open |
+| NFR-MAIN-002 | Maintainability | Migration script executes atomically; no partial state persists on failure | Must Have | Inspection | Open |
 
 **Safety (SAF):** Not applicable — system is classified non-safety in the constitution.
 **Regulatory (REG):** Not applicable — no regulatory obligations identified.
@@ -242,6 +246,94 @@ Schema drift without a migration trail makes the database state non-reproducible
 
 **Verification Method:** Inspection
 **Verification Notes:** Verify that the current schema is fully described by version-controlled migration scripts (or an initial schema definition file). Verify no schema changes exist in the database that are not represented in the repository.
+
+**Conflicts With:** None
+**Conflict Resolution:** N/A
+
+---
+
+### NFR-PERF-003 — Filtered Time-Range Query Index
+
+**Category:** Performance
+**Priority:** Must Have
+**Source:** Feature 009 design decision; NEED-STK-001-010 (seasonal/renovation analysis)
+**Status:** Open
+
+**Statement:**
+The `sensorreadings` table shall have a composite index on `(location, measurement_type, captured_at)` so that filtered time-range queries — the primary access pattern for dashboard panels and ad-hoc analysis — execute without a full table scan.
+
+**Rationale:**
+Dashboard queries and analysis queries filter by location and measurement type before applying a time-range predicate (e.g. "attic temperature for the last 7 days"). Without an index on these columns, the database performs a full table scan that grows linearly with history depth. At the current sensor count and publication rate, the table grows at approximately 2–4 million rows per year; a full scan over that volume produces multi-second query times unsuitable for interactive dashboard use. The composite column order `(location, measurement_type, captured_at)` matches the most selective filtering pattern. Duplicate `captured_at` values (e.g. from the CCU3 startup flood) are handled correctly by a non-unique index.
+
+**Note:** This index does not accelerate queries that filter only on `captured_at` without a leading `location` or `measurement_type` predicate. Such queries remain as table scans; at current data volumes this is acceptable. A standalone `captured_at` index may be added in a future iteration if needed.
+
+**Verification Method:** Inspection
+**Verification Notes:** After migration, run `SHOW INDEX FROM sensorreadings` and verify an index exists with `(location, measurement_type, captured_at)` in that column order. Optionally, run `EXPLAIN SELECT ... WHERE location = ... AND measurement_type = ... AND captured_at >= ...` and verify the index is used (key column is not NULL).
+
+**Conflicts With:** None
+**Conflict Resolution:** N/A
+
+---
+
+### NFR-INT-002 — Read-Only Database Access for Non-Logger Consumers
+
+**Category:** Interoperability
+**Priority:** Must Have
+**Source:** Feature 008 explore tasks (referenced but not formally captured); Constitution Principle I (Single-Purpose Service)
+**Status:** Open
+
+**Statement:**
+All consumers of the `sensorreadings` table other than the mqttlogger service (currently: companion monitor, future dashboard tooling) shall connect to MariaDB using a dedicated database user with `SELECT`-only privileges on `sensorreadings`. No write, update, delete, or DDL privileges shall be granted to this user.
+
+**Rationale:**
+The mqttlogger service is the sole authorised writer to the database. Constitution Principle I prohibits any other component from writing to the store. Enforcing this at the database privilege level makes the constraint structural rather than merely conventional — a misconfigured or compromised consumer cannot corrupt the historical record. The companion monitor currently uses the same `MYSQL_USER` credentials as the logger; this must be corrected as part of feature 009 or feature 008.
+
+**Verification Method:** Inspection
+**Verification Notes:** Verify a read-only MariaDB user exists (e.g. `grafana_ro` or `reader`). Verify `SHOW GRANTS FOR 'reader'@'%'` shows only `SELECT` on `sensorreadings`. Verify companion monitor and dashboard services use this user, not the logger credentials.
+
+**Conflicts With:** None
+**Conflict Resolution:** N/A
+
+---
+
+### NFR-INT-003 — Direct DATETIME Timestamp Column
+
+**Category:** Interoperability
+**Priority:** Must Have
+**Source:** Feature 009 W-003 scope; NEED-STK-001-010; OI-005 (closed)
+**Status:** Open
+
+**Statement:**
+The schema shall expose a single `captured_at DATETIME NOT NULL` column as the timestamp for every reading. No downstream query shall be required to use `TIMESTAMP()`, `CONCAT()`, or any computed expression to reconstruct a usable timestamp from multiple columns.
+
+**Rationale:**
+The previous two-column form (`currentdate DATE`, `currenttime TIME`) required every consumer — dashboard panels, analysis queries, companion monitor — to compute `TIMESTAMP(currentdate, currenttime)` in every query. This made queries verbose, error-prone, and incompatible with dashboard tools that expect a native datetime column for automatic time-axis detection. A single `DATETIME` column eliminates the workaround universally. The schema cannot simultaneously satisfy this NFR and retain `currentdate`/`currenttime` as the primary timestamp representation.
+
+**Verification Method:** Inspection
+**Verification Notes:** After migration, run `DESCRIBE sensorreadings` and verify `captured_at DATETIME NOT NULL` is present and `currentdate`/`currenttime` columns are absent. Verify the companion monitor and any provisioned dashboard queries reference `captured_at` directly without a computed wrapper.
+
+**Conflicts With:** None
+**Conflict Resolution:** N/A
+
+---
+
+### NFR-MAIN-002 — Migration Script Atomicity
+
+**Category:** Maintainability
+**Priority:** Must Have
+**Source:** RISK-027; SCN-008 failure modes
+**Status:** Open
+
+**Statement:**
+The migration script shall execute as a single atomic database transaction. If any statement within the migration fails, the entire transaction shall roll back and the schema shall be left in its pre-migration state. No partial migration state — such as new columns added but old columns not yet dropped, or backfill incomplete — shall persist after a failure.
+
+**Rationale:**
+The migration runs against live production data with no backup. A partial migration leaves the schema in an indeterminate state: the logger's ORM model and the companion monitor's queries would both be broken simultaneously, with no clean rollback path. Wrapping the migration in a single `START TRANSACTION ... COMMIT` block ensures the outcome is binary — either the migration completes fully or nothing changes.
+
+**Note:** MariaDB DDL statements (`ALTER TABLE`, `ADD COLUMN`, `DROP COLUMN`) are not transactional in the same way as DML. In practice, `ADD COLUMN` and `DROP COLUMN` on InnoDB tables in MariaDB 10.x are metadata-only operations that are effectively atomic at the storage engine level. The backfill `UPDATE` statement is fully transactional. The migration script shall be structured to run the `UPDATE` (backfill) within a transaction, and the DDL steps (ADD/DROP) shall be verified individually with row-count spot checks before proceeding.
+
+**Verification Method:** Inspection
+**Verification Notes:** Review the migration script and verify the `UPDATE` backfill is wrapped in `START TRANSACTION ... COMMIT`. Verify the script performs a spot-check `SELECT` after backfill before executing `DROP COLUMN`. Verify the script exits with a non-zero status and printed error if any statement fails.
 
 **Conflicts With:** None
 **Conflict Resolution:** N/A

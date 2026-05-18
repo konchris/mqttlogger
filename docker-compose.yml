@@ -115,8 +115,8 @@ services:
     environment:
       - DB_HOST=mariadb
       - DB_PORT=3306
-      - DB_USER=${MYSQL_USER}
-      - DB_PASSWORD=${MYSQL_PASSWORD}
+      - DB_USER=${MONITOR_DB_USER}
+      - DB_PASSWORD=${MONITOR_DB_PASSWORD}
       - DB_NAME=${MYSQL_DATABASE}
       - NTFY_URL=http://ntfy:80/mqttlogger-alerts
       - POLLING_INTERVAL_SECONDS=300

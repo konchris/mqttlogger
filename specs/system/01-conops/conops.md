@@ -1,10 +1,10 @@
 # Concept of Operations
 
 **System:** mqttlogger
-**Feature:** 002-mqttlogger-baseline
-**Date:** 2026-05-08
+**Feature:** 002-mqttlogger-baseline (created); 009-schema-evolution (updated)
+**Date:** 2026-05-08 (created); 2026-05-17 (updated)
 **Status:** DRAFT
-**Last Updated By:** se-conops skill
+**Last Updated By:** se-conops skill (feature 009)
 
 ---
 
@@ -47,8 +47,9 @@ mqttlogger operates in the background without any user interface. It does not di
 | System | Role | Notes |
 |--------|------|-------|
 | MariaDB database | Persistence target | Receives and stores every captured reading; co-hosted on the same mini PC |
-| Jupyter notebooks | Ad-hoc analysis | Reads from MariaDB for exploratory data analysis; not a real-time consumer |
-| Future dashboard | Planned downstream consumer | Not yet designed; expected to read from MariaDB |
+| Jupyter notebooks | Ad-hoc analysis | Reads from MariaDB for exploratory data analysis; not a real-time consumer. No active notebooks exist as of feature 009. |
+| Companion monitor (`companion-monitor/monitor.py`) | Gap and topology monitor | Polls MariaDB to detect sensor silence or unknown new sensors; queries `TIMESTAMP(currentdate, currenttime)` — **must be updated atomically with any schema migration**. See RISK-026. |
+| Dashboard tooling (feature 008 — paused) | Visualisation | OPT-A (Grafana) and OPT-B (Metabase) pending final tool selection; evaluation deferred until schema migration (feature 009) is complete. Dashboard queries will target `captured_at`, `location`, and `measurement_type` directly. |
 | Operator notification device (iPhone) | Alert recipient | Receives push notifications from the self-hosted ntfy server via the home LAN; the ntfy app connects directly to the LAN IP of the ntfy container — **notification delivery requires the device to be on the home network**. Off-network delivery (operator away from home) is not currently supported. See RISK-023. |
 
 ### Operational Constraints
@@ -103,11 +104,11 @@ Full profiles are in `specs/002-mqttlogger-baseline/00-stakeholders/`. Summary o
 
 | ID | Issue | Owner | Target Resolution |
 |----|-------|-------|-------------------|
-| OI-001 | Host BIOS not configured for auto-restart after power loss — all power outage recovery requires manual host power-on | Chris | Before next Phase gate — BIOS setting change is a one-time infrastructure action |
-| OI-002 | No passive notification mechanism exists for container crash or data capture failure — SC-CONOPS-003 is unmet by current implementation | Chris | Architecture / NFR phase |
-| OI-003 | No data completeness verification mechanism — SC-CONOPS-004 is unmet by current implementation | Chris | Architecture / NFR phase |
-| OI-004 | CCU3/RedMatic "publish cached values on start" setting not yet evaluated or changed — spurious startup zeros continue to pollute the dataset | Chris | Before next active experiment window |
-| OI-005 | Future dashboard identified as downstream consumer but not yet designed — database schema changes may inadvertently break dashboard integration | Chris | Phase 3+ |
+| OI-001 | Host BIOS not configured for auto-restart after power loss — all power outage recovery requires manual host power-on | Chris | Post-009/008 — BIOS setting change is a one-time infrastructure action |
+| OI-002 | No passive notification mechanism exists for container crash or data capture failure — SC-CONOPS-003 is unmet by current implementation | Chris | Addressed by OPT-A (Uptime Kuma heartbeat) in feature 002 baseline |
+| OI-003 | No data completeness verification mechanism — SC-CONOPS-004 is unmet by current implementation | Chris | Addressed by OPT-B (companion monitor gap detection) in feature 002 baseline |
+| OI-004 | CCU3/RedMatic "publish cached values on start" setting not yet evaluated or changed — spurious startup zeros continue to pollute the dataset | Chris | Post-009/008 — evaluate RedMatic setting change |
+| OI-005 | ~~Future dashboard identified as downstream consumer but not yet designed — database schema changes may inadvertently break dashboard integration~~ **CLOSED by feature 009** — schema migration (009) explicitly targets a schema that is dashboard-friendly; dashboard tool selection (008) follows migration. | Chris | **CLOSED — 2026-05-17** |
 
 ---
 

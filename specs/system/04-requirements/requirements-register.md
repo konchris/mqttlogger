@@ -1,10 +1,10 @@
 # Requirements Register
 
 **System:** mqttlogger
-**Feature:** 007-python312-upgrade (updated; previously 004-remove-init-legacy / 002-mqttlogger-baseline)
-**Date:** 2026-05-16
-**Status:** DRAFT — Section 5 added for feature 007; prior sections unchanged
-**Last Updated By:** se-requirements skill (2026-05-16)
+**Feature:** 004-remove-init-legacy (updated); 007-python312-upgrade (Section 5 added); 009-schema-evolution (Section 6 added)
+**Date:** 2026-05-12 (last quality gate); 2026-05-16 (feature 007); 2026-05-17 (feature 009)
+**Status:** DRAFT — FR-027..FR-040 (feature 009 schema evolution) implemented and deployed on sietchtabr (2026-05-17); note: 009 feature artifacts use original numbering FR-023..FR-036 (renumbered at merge to FR-027..FR-040 to avoid collision with feature 007)
+**Last Updated By:** se-req-quality skill (feature 009 merge)
 
 ---
 
@@ -302,10 +302,24 @@ These requirements describe the passive monitoring capability added by the OPT-A
 | FR-MON-006 | — | — | NFR-PORT-001 | Implemented |
 | FR-MON-007 | — | — | NFR-SEC-001 | Implemented |
 | FR-022 | — | — | NFR-MAIN-001 | Implemented |
-| FR-023 | — | RISK-003 | NFR-PORT-001 | Planned |
-| FR-024 | — | RISK-003 | NFR-PORT-001 | Planned |
-| FR-025 | — | RISK-003 | NFR-MAIN-001 | Planned |
-| FR-026 | — | RISK-003 | — | Planned |
+| FR-023 | — | RISK-003 | NFR-PORT-001 | Implemented |
+| FR-024 | — | RISK-003 | NFR-PORT-001 | Implemented |
+| FR-025 | — | RISK-003 | NFR-MAIN-001 | Implemented |
+| FR-026 | — | RISK-003 | — | Implemented |
+| FR-027 | SCN-008 | — | NFR-INT-003, NFR-MAIN-002 | Implemented |
+| FR-028 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-029 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-030 | SCN-008 | — | NFR-PERF-003 | Implemented |
+| FR-031 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-032 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-033 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-034 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-035 | SCN-008 | — | NFR-PERF-002 | Implemented |
+| FR-036 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-037 | SCN-008 | — | NFR-INT-003 | Implemented |
+| FR-038 | SCN-008 | RISK-026 | NFR-INT-003 | Implemented |
+| FR-039 | SCN-008 | RISK-026 | NFR-INT-003 | Implemented |
+| FR-040 | — | RISK-028 | NFR-INT-002 | Implemented |
 
 ---
 
@@ -339,6 +353,20 @@ These requirements describe the passive monitoring capability added by the OPT-A
 | FR-024 | PASS WITH WARNINGS | Singular: two-sentence goal+mechanism (acceptable) |
 | FR-025 | PASS WITH WARNINGS | Singular: two-sentence goal+mechanism (acceptable) |
 | FR-026 | PASS WITH WARNINGS | Singular: three-package constraint (acceptable) |
+| FR-027 | PASS WITH WARNINGS | Singular: ADD + POPULATE inseparable for NOT NULL column (acceptable) |
+| FR-028 | PASS WITH WARNINGS | Singular: ADD + POPULATE inseparable for NOT NULL column (acceptable) |
+| FR-029 | PASS WITH WARNINGS | Singular: ADD + POPULATE inseparable for NOT NULL column (acceptable) |
+| FR-030 | PASS | |
+| FR-031 | PASS WITH WARNINGS | Singular: drop two columns = one logical action (acceptable); Complete WARN resolved — text updated to specify explicit SQL null-check criterion |
+| FR-032 | PASS WITH WARNINGS | Singular: positive + negative form of same class property (acceptable) |
+| FR-033 | PASS | |
+| FR-034 | PASS | |
+| FR-035 | PASS WITH WARNINGS | Unambiguous WARN resolved — text updated to `datetime.now(timezone.utc)` |
+| FR-036 | PASS WITH WARNINGS | Complete: non-conforming topic behavior unspecified; mitigated by ASM-A-001 pre-deployment check (acceptable) |
+| FR-037 | PASS | |
+| FR-038 | PASS | |
+| FR-039 | PASS | |
+| FR-040 | PASS WITH WARNINGS | Singular: credentials + privilege level = one access-control policy (acceptable) |
 
 ---
 
@@ -415,6 +443,205 @@ Requirements derived from RISK-003 (Python 3.10 EOL October 2026), NFR-PORT-001,
 **Verification Method:** Inspection + Test — verify `requirements.txt` satisfies the stated minimums; CI passes with updated pins on Python 3.12
 **IEEE 29148 Quality:** PASS WITH WARNINGS — Singular: three package constraints stated in one requirement; all serve the single Python 3.12 compatibility obligation (acceptable per FR-003/FR-007 precedent)
 **Status:** Implemented — commit 3f90084 (007); pkg-config fix 1b7fac2 (007)
+
+---
+
+---
+
+## Section 6 — Schema Evolution (Feature 009)
+
+*Note: Feature 009 artifacts (tasks.md, gate reports) reference these requirements as FR-023..FR-036. They were renumbered to FR-027..FR-040 at merge time to avoid collision with feature 007.*
+
+Requirements derived from SCN-008 (Live Schema Migration), NFR-INT-002, NFR-INT-003,
+NFR-PERF-003, and the OPT-A convergence decision. They cover the migration script, the
+updated SQLAlchemy model, the updated `on_message` handler, the updated companion monitor
+queries, and the read-only database user.
+
+All requirements trace to NEED-STK-001-008 (consistent, predictable structure with audit
+trail), NEED-STK-001-010 (temporal and device-level resolution for analysis), and/or
+NEED-STK-001-011 (trustworthy data).
+
+---
+
+### FR-027 — Migration: Add `captured_at`
+
+**Statement:** The migration script shall add a column `captured_at DATETIME NOT NULL` to the `sensorreadings` table and populate it for every existing row with `TIMESTAMP(currentdate, currenttime)` for that row, executed within a transaction before any `DROP COLUMN` statement.
+
+**Source:** SCN-008 Step 4; NFR-INT-003; NFR-MAIN-002
+**Traced Need:** NEED-STK-001-008, NEED-STK-001-010
+**Priority:** Must Have
+**Verification Method:** Inspection + Test — inspect migration script for correct SQL; post-migration: `DESCRIBE sensorreadings` confirms `captured_at DATETIME NOT NULL` present; `SELECT COUNT(*) FROM sensorreadings WHERE captured_at IS NULL` returns 0
+**IEEE 29148 Quality:** PASS WITH WARNINGS — "add + populate" are inseparable for a NOT NULL column (acceptable per FR-011 precedent)
+**Status:** Implemented
+
+---
+
+### FR-028 — Migration: Add `location`
+
+**Statement:** The migration script shall add a column `location TEXT NOT NULL` to the `sensorreadings` table and populate it for every existing row with `SUBSTRING_INDEX(SUBSTRING_INDEX(device, '/', 3), '/', -2)` — the second and third slash-delimited path segments of `device`, joined by a forward slash (e.g. `environment/indoor/attic/temperature` → `indoor/attic`).
+
+**Source:** SCN-008 Step 4; NFR-INT-003; OPT-A convergence
+**Traced Need:** NEED-STK-001-008, NEED-STK-001-010
+**Priority:** Must Have
+**Verification Method:** Inspection + Test — inspect migration script for correct SQL expression; post-migration: spot-check `SELECT device, location FROM sensorreadings LIMIT 20` and verify derivation is correct for all observed topics
+**IEEE 29148 Quality:** PASS WITH WARNINGS — "add + populate" inseparable for NOT NULL (acceptable)
+**Status:** Implemented
+
+---
+
+### FR-029 — Migration: Add `measurement_type`
+
+**Statement:** The migration script shall add a column `measurement_type TEXT NOT NULL` to the `sensorreadings` table and populate it for every existing row with `SUBSTRING_INDEX(device, '/', -1)` — the final slash-delimited path segment of `device` (e.g. `environment/indoor/attic/temperature` → `temperature`).
+
+**Source:** SCN-008 Step 4; NFR-INT-003; OPT-A convergence
+**Traced Need:** NEED-STK-001-008, NEED-STK-001-010
+**Priority:** Must Have
+**Verification Method:** Inspection + Test — inspect migration script for correct SQL expression; post-migration: spot-check `SELECT device, measurement_type FROM sensorreadings LIMIT 20` and verify correctness
+**IEEE 29148 Quality:** PASS WITH WARNINGS — "add + populate" inseparable for NOT NULL (acceptable)
+**Status:** Implemented
+
+---
+
+### FR-030 — Migration: Composite Index
+
+**Statement:** The migration script shall create a composite index named `idx_loc_mtype_time` on `sensorreadings(location, measurement_type, captured_at)` after the three new columns have been populated.
+
+**Source:** NFR-PERF-003; SCN-008 Step 4
+**Traced Need:** NEED-STK-001-010
+**Priority:** Must Have
+**Verification Method:** Inspection — post-migration: `SHOW INDEX FROM sensorreadings` confirms index `idx_loc_mtype_time` exists on columns `(location, measurement_type, captured_at)` in that order
+**IEEE 29148 Quality:** PASS
+**Status:** Implemented
+
+---
+
+### FR-031 — Migration: Drop Legacy Timestamp Columns
+
+**Statement:** The migration script shall drop the `currentdate` and `currenttime` columns from `sensorreadings` after all three new columns have been populated and after executing `SELECT COUNT(*) FROM sensorreadings WHERE captured_at IS NULL` and confirming the result is zero.
+
+**Source:** SCN-008 Step 4; NFR-INT-003
+**Traced Need:** NEED-STK-001-008
+**Priority:** Must Have
+**Verification Method:** Inspection + Test — inspect migration script for DROP COLUMN statements positioned after backfill; post-migration: `DESCRIBE sensorreadings` confirms neither `currentdate` nor `currenttime` is present
+**IEEE 29148 Quality:** PASS WITH WARNINGS — "drop currentdate and currenttime" is two columns, one logical action (acceptable)
+**Status:** Implemented
+
+---
+
+### FR-032 — Model: `captured_at` Column
+
+**Statement:** The `SensorReading` SQLAlchemy model in `mqttlogger/data_model.py` shall declare `captured_at` as a `DateTime` column that does not permit null values, and shall not declare `currentdate` or `currenttime` columns.
+
+**Source:** SCN-008 Step 6; NFR-INT-003
+**Traced Need:** NEED-STK-001-008
+**Priority:** Must Have
+**Verification Method:** Inspection — `data_model.py` reviewed: `Column(DateTime, nullable=False)` present for `captured_at`; `Column(Date, ...)` and `Column(Time, ...)` absent
+**IEEE 29148 Quality:** PASS WITH WARNINGS — positive + negative form of same class property (acceptable per FR-008 precedent)
+**Status:** Implemented
+
+---
+
+### FR-033 — Model: `location` Column
+
+**Statement:** The `SensorReading` SQLAlchemy model shall declare `location` as a `Text` column that does not permit null values.
+
+**Source:** SCN-008 Step 6; OPT-A convergence
+**Traced Need:** NEED-STK-001-008
+**Priority:** Must Have
+**Verification Method:** Inspection — `data_model.py` reviewed: `Column(Text, nullable=False)` present for `location`
+**IEEE 29148 Quality:** PASS
+**Status:** Implemented
+
+---
+
+### FR-034 — Model: `measurement_type` Column
+
+**Statement:** The `SensorReading` SQLAlchemy model shall declare `measurement_type` as a `Text` column that does not permit null values.
+
+**Source:** SCN-008 Step 6; OPT-A convergence
+**Traced Need:** NEED-STK-001-008
+**Priority:** Must Have
+**Verification Method:** Inspection — `data_model.py` reviewed: `Column(Text, nullable=False)` present for `measurement_type`
+**IEEE 29148 Quality:** PASS
+**Status:** Implemented
+
+---
+
+### FR-035 — `on_message`: Populate `captured_at`
+
+**Statement:** The `on_message` handler in `mqttlogger/mqtt_client.py` shall set `captured_at` on each new `SensorReading` to `datetime.now(timezone.utc)` at the time the MQTT message is received.
+
+**Source:** SCN-008 Step 6; FR-002 (extends message parsing to new field)
+**Traced Need:** NEED-STK-001-001, NEED-STK-001-010
+**Priority:** Must Have
+**Verification Method:** Test (IT) — publish a test message; query the database for the inserted row; verify `captured_at` is a `DATETIME` value within 5 seconds of the publish time
+**IEEE 29148 Quality:** PASS WITH WARNINGS — Unambiguous WARN resolved: text updated to `datetime.now(timezone.utc)` per se-req-quality recommendation
+**Status:** Implemented
+
+---
+
+### FR-036 — `on_message`: Populate `location`
+
+**Statement:** The `on_message` handler shall set `location` on each new `SensorReading` to the second and third slash-delimited path segments of the MQTT message topic, joined by a forward slash (e.g. topic `environment/indoor/attic/temperature` → `location = 'indoor/attic'`).
+
+**Source:** SCN-008 Step 6; OPT-A convergence
+**Traced Need:** NEED-STK-001-010
+**Priority:** Must Have
+**Verification Method:** Test (IT) — publish a test message on a known topic; verify the `location` column in the inserted row matches the expected two-segment value
+**IEEE 29148 Quality:** PASS WITH WARNINGS — Complete: behavior for non-conforming topic (fewer than 4 segments) unspecified; mitigated by ASM-A-001 pre-deployment topic inventory (acceptable)
+**Status:** Implemented
+
+---
+
+### FR-037 — `on_message`: Populate `measurement_type`
+
+**Statement:** The `on_message` handler shall set `measurement_type` on each new `SensorReading` to the final slash-delimited path segment of the MQTT message topic (e.g. topic `environment/indoor/attic/temperature` → `measurement_type = 'temperature'`).
+
+**Source:** SCN-008 Step 6; OPT-A convergence
+**Traced Need:** NEED-STK-001-010
+**Priority:** Must Have
+**Verification Method:** Test (IT) — publish a test message on a known topic; verify the `measurement_type` column in the inserted row matches the expected value
+**IEEE 29148 Quality:** PASS
+**Status:** Implemented
+
+---
+
+### FR-038 — Companion Monitor: Use `captured_at` for Gap Detection
+
+**Statement:** The `query_active_sensors()` function in `companion-monitor/monitor.py` shall filter rows using the expression `captured_at >= DATE_SUB(NOW(), INTERVAL %s MINUTE)` in place of `TIMESTAMP(currentdate, currenttime) >= DATE_SUB(NOW(), INTERVAL %s MINUTE)`.
+
+**Source:** SCN-008 Step 9; NFR-INT-003; RISK-026
+**Traced Need:** NEED-STK-001-002, NEED-STK-001-009
+**Priority:** Must Have
+**Verification Method:** Inspection — `companion-monitor/monitor.py` reviewed: no reference to `currentdate`, `currenttime`, or `TIMESTAMP()` in any SQL string; `captured_at` used as time filter
+**IEEE 29148 Quality:** PASS
+**Status:** Implemented
+
+---
+
+### FR-039 — Companion Monitor: Use `captured_at` in Bootstrap Query
+
+**Statement:** The `bootstrap_sensors.py` script shall filter rows using the expression `DATE(captured_at) >= %s` in place of `currentdate >= %s` when querying for sensors active within a lookback period.
+
+**Source:** SCN-008 Step 9; NFR-INT-003; RISK-026
+**Traced Need:** NEED-STK-001-009
+**Priority:** Must Have
+**Verification Method:** Inspection — `companion-monitor/bootstrap_sensors.py` reviewed: no reference to `currentdate` in any SQL string; `DATE(captured_at)` used as date filter
+**IEEE 29148 Quality:** PASS
+**Status:** Implemented
+
+---
+
+### FR-040 — Companion Monitor: Read-Only Database Credentials
+
+**Statement:** The `companion_monitor` service definition in `docker-compose.yml` shall supply database credentials for a MariaDB user that has `SELECT`-only privileges on `sensorreadings`, distinct from the write-capable credentials used by the `mqtt_logger` service.
+
+**Source:** NFR-INT-002; RISK-028; Constitution Principle I (Single-Purpose Service)
+**Traced Need:** NEED-STK-001-008, NEED-STK-001-011
+**Priority:** Must Have
+**Verification Method:** Inspection — `docker-compose.yml` reviewed: `companion_monitor` environment specifies a different `DB_USER` than `mqtt_logger`; `SHOW GRANTS FOR '<db_user>'@'%'` on `sietchtabr` confirms SELECT-only on `sensorreadings`
+**IEEE 29148 Quality:** PASS
+**Status:** Implemented
 
 ---
 
