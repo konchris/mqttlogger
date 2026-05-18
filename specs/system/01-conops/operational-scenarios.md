@@ -1,10 +1,10 @@
 # Operational Scenarios
 
 **System:** mqttlogger
-**Feature:** 002-mqttlogger-baseline
-**Date:** 2026-05-08
+**Feature:** 002-mqttlogger-baseline (created); 009-schema-evolution (updated)
+**Date:** 2026-05-08 (created); 2026-05-17 (updated)
 **Status:** DRAFT
-**Last Updated By:** se-conops skill
+**Last Updated By:** se-conops skill (feature 009)
 
 ---
 
@@ -19,6 +19,7 @@
 | SCN-005 | Broker temporarily unavailable | Degraded Operation | STK-001 | High |
 | SCN-006 | HomeMatic/CCU3 restart — spurious zero flood | Degraded Operation | STK-001 | Medium |
 | SCN-007 | Planned maintenance update | Maintenance | STK-001 / STK-002 | Medium |
+| SCN-008 | Live schema migration | Maintenance | STK-001 | High |
 
 ---
 
@@ -219,3 +220,36 @@
 **Consequences of Failure:** Extended data gap; or a silent non-capture state post-maintenance that goes undetected.
 
 **Notes:** STK-002 perspective: after a long absence, step 2 must be preceded by re-orientation (reading quick-start doc, identifying deployed version, checking backlog). Without these artefacts, the maintenance session begins with context reconstruction rather than productive action. Relates to NEED-STK-002-001, NEED-STK-002-002.
+
+---
+
+### SCN-008 — Live Schema Migration
+
+**Type:** Maintenance
+**Primary Stakeholder:** STK-001
+**Precondition:** The stack is running normally on `sietchtabr`; migration SQL has been prepared; companion monitor code (`monitor.py`, `bootstrap_sensors.py`) has been updated in the same deployment to use the new column names; the operator has SSH access to the host.
+
+**Scenario Steps:**
+
+1. The operator SSHes into `sietchtabr` and pulls the latest code from the feature branch (`git pull` or `git checkout feature/009-schema-evolution`).
+2. The operator stops the entire Docker Compose stack (`docker compose down`). All services — logger, broker, database, companion monitor, Uptime Kuma, ntfy — go offline. Sensor readings published during this window are permanently lost.
+3. The operator starts only the MariaDB container (`docker compose up -d mariadb`) and waits for its health check to pass.
+4. The operator runs the migration SQL against the live `sensorreadings` table: adds `captured_at DATETIME`, `location TEXT`, and `measurement_type TEXT`; backfills all three from existing `device`, `currentdate`, and `currenttime` values; drops `currentdate` and `currenttime`.
+5. The operator confirms the migration completed without errors and spot-checks a sample of rows to verify backfill correctness.
+6. The operator starts the full stack (`docker compose up -d`).
+7. The operator deliberately triggers a sensor reading — for example, by opening a window — and waits approximately 30 seconds.
+8. The operator queries the database for the most recent row and confirms: `captured_at` is correctly populated with a UTC timestamp; `location` matches the expected room (e.g. `indoor/bedroom`); `measurement_type` is correct (e.g. `temperature`); `device` is retained in full; `currentdate` and `currenttime` columns no longer exist.
+9. The operator confirms the companion monitor container is running and healthy (`docker compose ps companion_monitor`).
+
+**Successful Outcome:** The stack is fully operational with the new schema. New readings are written with all four columns (`captured_at`, `location`, `measurement_type`, `device`). The companion monitor is alerting normally. The data gap is bounded to the migration window (expected: under 5 minutes).
+
+**Failure Modes Within This Scenario:**
+- Step 4: Migration SQL fails partway — schema is left in an inconsistent state; operator must manually inspect and either complete the migration or revert column additions before restarting.
+- Step 4: Backfill produces incorrect `location` or `measurement_type` values — topic structure differs from the expected pattern; operator must correct the derivation logic and re-run.
+- Step 6: Companion monitor container fails to start — code was not updated atomically with the schema; `TIMESTAMP(currentdate, currenttime)` reference causes an immediate SQL error; operator must verify the correct code version is deployed.
+- Step 7–8: New readings show `NULL` in `captured_at` — logger code (`mqtt_client.py`, `data_model.py`) was not updated; operator must rebuild the logger image.
+- Step 8: `currentdate` or `currenttime` still present — migration did not complete; DROP COLUMN step failed silently; operator must re-run the drop.
+
+**Consequences of Failure:** A partially migrated schema breaks the companion monitor immediately (gap detection stops); the logger may also fail to write if the ORM model references removed columns. Recovery requires either completing the migration or reverting the schema to the original two-column form — no data backup exists, so any partial-write rows must be resolved manually. Rollback is straightforward as long as no new readings have been written under the new schema; after readings are written with `captured_at`, reverting requires restoring `currentdate` and `currenttime` values from `captured_at`, which is lossless.
+
+**Notes:** The migration window is the only planned data gap in this feature. Minimising it requires pre-staging the migration SQL before bringing the stack down. See RISK-026 (atomic deployment) and RISK-027 (no backup). Relates to OI-005 (CLOSED).

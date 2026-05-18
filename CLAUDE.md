@@ -16,12 +16,25 @@ Home automation sensor logger. HomeMatic IP sensors publish via CCU3/RedMatic ov
 
 ## Current state
 
-No active feature branch. Next candidates:
+**Active feature branch: `feature/009-schema-evolution`** — SE Phase 1 in progress (W-003 schema migration).
 
-- **W-001**: promote `message received` and `write success` log events from DEBUG to INFO in `mqtt_client.py` (FR-006 warn)
-- **W-002**: make MQTT topic filter configurable via `config.json` instead of hardcoded `"environment/#"` in `mqtt_client.py:62` (FR-008 warn)
+**Paused: `feature/008-grafana-dashboard`** — SE Phase 1 complete; OPT-A (Grafana) and OPT-B (Metabase) docker-compose setup committed; IP-001 evaluation deferred until schema is clean. Resumes after 009 merges; 008 will rebase onto updated develop and rebuild dashboard queries against the new schema.
+
+**Decision record (2026-05-17):** 009 was promoted ahead of 008 because a clean schema removes the ergonomic advantage of 3rd-party dashboard tools (Grafana/Metabase), making a homegrown dashboard a genuine option. Evaluating dashboard tools before the schema is clean would bias the comparison.
+
+**W-003 scope (resolved):**
+- Merge `currentdate` (Date) + `currenttime` (Time) → `captured_at DATETIME`
+- Add `location TEXT` (derived from MQTT topic levels 3–4, e.g. `indoor/attic`)
+- Add `measurement_type TEXT` (derived from MQTT topic level 5, e.g. `temperature`)
+- Keep `device TEXT` (full MQTT topic) — retained as canonical source; a single location can have multiple devices with the same measurement type (e.g. thermostat + radiators all reporting temperature)
+
+Next candidates (after 009 + 008):
+
+
 - **RISK-012**: evaluate RedMatic startup zero suppression (OI-004)
 - **RISK-015**: configure BIOS power-restore on sietchtabr (OI-001)
+
+W-001 and W-002 were completed in feature `006-log-and-topic-fixes` (merged 2026-05-16).
 
 ### Architecture status — COMPLETE (2026-05-10)
 
@@ -68,7 +81,7 @@ docker-compose.yml            # All services: mqtt, mqtt_logger, mariadb,
 db/
   initial-schema.sql            # Version-controlled DDL artifact (generated from data_model.py)
 specs/system/                   # Living SE artifacts (RTM, risk register, V&V plan/results, architecture, etc.)
-specs/005-schema-audit/         # Feature SE artifacts (gate reports, tasks, plan, explore)
+specs/features/                 # Per-feature SE artifacts (gate reports, tasks, plan, explore)
 ```
 
 ## Stack on sietchtabr
@@ -115,6 +128,12 @@ CI: GitHub Actions (`.github/workflows/ci.yml`) — lint (ruff) + test + coverag
 - Branch must be up-to-date with the target before merging
 - Force pushes and deletions are blocked
 
-**Convention:** a feature branch is not merged until CI is green *and* the change has been verified on `sietchtabr` (deployment test is manual — the live broker and MariaDB cannot be replicated in CI).
+**Convention:** a feature branch is not merged until all four conditions are met:
+1. CI is green on the feature branch
+2. Phase 5 gate PASS artifact committed to the feature branch
+3. Phase 6 V&V closure artifact committed to the feature branch
+4. Deployment on `sietchtabr` performed **from the feature branch** (not after merge)
 
-No active feature branch.
+The PR is opened only after all four conditions are met. The CI gate-check job enforces condition 2.
+
+Active feature: `feature/009-schema-evolution` (W-003 schema migration). Paused: `feature/008-grafana-dashboard`.

@@ -82,7 +82,7 @@ def query_active_sensors(window_minutes: int) -> set[str]:
     sql = """
         SELECT DISTINCT device
         FROM sensorreadings
-        WHERE TIMESTAMP(currentdate, currenttime) >= DATE_SUB(NOW(), INTERVAL %s MINUTE)
+        WHERE captured_at >= DATE_SUB(NOW(), INTERVAL %s MINUTE)
     """
     conn = get_db_connection()
     try:

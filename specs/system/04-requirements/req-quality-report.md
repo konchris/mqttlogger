@@ -1,10 +1,10 @@
 # Requirements Quality Report
 
 **System:** mqttlogger
-**Feature:** 007-python312-upgrade (updated; includes all requirements through feature 007)
-**Date:** 2026-05-16
+**Feature:** 004-remove-init-legacy through 009-schema-evolution (all requirements through feature 009)
+**Date:** 2026-05-12 (original); 2026-05-16 (feature 007 update); 2026-05-17 (feature 009 update)
 **Status:** PASS WITH WARNINGS
-**Last Updated By:** se-req-quality skill (2026-05-16)
+**Last Updated By:** se-req-quality skill (feature 009)
 
 ---
 
@@ -431,6 +431,249 @@ FR-MON-006, FR-MON-007 all follow the same pattern: two closely related, causall
 clauses in one requirement. This is a common and accepted pattern in system-level requirements
 where splitting would reduce rather than improve clarity. No refactoring required.
 
-The Singular WARNs on FR-023, FR-024, FR-025, FR-026 follow the same two-sentence goal+mechanism
-pattern. All four new requirements for feature 007-python312-upgrade carry only this acceptable
-warning. No refactoring required.
+---
+
+# Feature 009 — Schema Evolution Quality Review
+
+**Date:** 2026-05-17
+**Last Updated By:** se-req-quality skill
+
+---
+
+## Summary (Feature 009 Batch)
+
+| Metric | Count |
+| ------ | ----- |
+| Total requirements checked | 14 |
+| Requirements fully passing (clean PASS) | 6 |
+| Requirements with WARNs only | 8 |
+| Requirements with FAILs | 0 |
+| Coverage gaps (needs without requirements) | 0 |
+
+**Overall Result: PASS WITH WARNINGS**
+
+All 14 schema-evolution requirements are traceable to a stakeholder need or NFR, verifiable by a
+feasible method, and feasibly implemented by the selected migration approach (OPT-A). No requirement
+fails any of the eight IEEE 29148 quality attributes. Eight requirements carry warnings: six are
+acceptable Singular/Complete patterns (add+populate for NOT NULL columns is an indivisible operation)
+and two are higher-priority Should Fix items — FR-027 (vague "verified" criterion) and FR-031
+(timezone-ambiguous `datetime.now()` call). Neither blocks Phase 2 closure.
+
+---
+
+## Clean PASSes
+
+| Req ID | Short Description |
+| ------ | ----------------- |
+| FR-030 | Migration creates composite index `idx_loc_mtype_time` |
+| FR-033 | SensorReading model declares `location Text NOT NULL` |
+| FR-034 | SensorReading model declares `measurement_type Text NOT NULL` |
+| FR-037 | `on_message` sets `measurement_type` from final topic segment |
+| FR-038 | `query_active_sensors()` uses `captured_at`; no `TIMESTAMP()` |
+| FR-039 | `bootstrap_sensors.py` uses `DATE(captured_at)`; no `currentdate` |
+
+---
+
+## FR-027 — Migration: Add `captured_at`
+
+**Full Text:** "The migration script shall add a column `captured_at DATETIME NOT NULL` to the
+`sensorreadings` table and populate it for every existing row with `TIMESTAMP(currentdate,
+currenttime)` for that row, executed within a transaction before any `DROP COLUMN` statement."
+
+| Attribute | Result | Finding |
+| --------- | ------ | ------- |
+| Necessary | PASS | Traces to NEED-STK-001-008, NEED-STK-001-010, NFR-INT-003, NFR-MAIN-002 |
+| Unambiguous | PASS | SQL expression stated explicitly; transaction placement stated |
+| Verifiable | PASS | I+T (ST): inspect SQL; DESCRIBE confirms column; COUNT(*) WHERE IS NULL = 0 |
+| Consistent | PASS | Consistent with FR-032 (model), FR-035 (on_message) |
+| Complete | PASS | ADD, POPULATE, and transaction ordering all specified |
+| Singular | WARN | "add column" and "populate every row" are inseparable for a NOT NULL column — MariaDB requires a DEFAULT or immediate UPDATE; splitting would produce an unexecutable requirement. Acceptable per FR-011 precedent. |
+| Feasible | PASS | Standard InnoDB ALTER TABLE + UPDATE pattern |
+| Traceable | PASS | SCN-008 Step 4; NFR-INT-003; NFR-MAIN-002 |
+
+---
+
+## FR-028 — Migration: Add `location`
+
+**Full Text:** "The migration script shall add a column `location TEXT NOT NULL` to the
+`sensorreadings` table and populate it for every existing row with
+`SUBSTRING_INDEX(SUBSTRING_INDEX(device, '/', 3), '/', -2)` — the second and third
+slash-delimited path segments of `device`, joined by a forward slash."
+
+| Attribute | Result | Finding |
+| --------- | ------ | ------- |
+| Necessary | PASS | Traces to NEED-STK-001-008, NEED-STK-001-010, NFR-INT-003 |
+| Unambiguous | PASS | SQL expression stated explicitly; example given |
+| Verifiable | PASS | I+T (ST): inspect SQL; spot-check SELECT confirms derivation |
+| Consistent | PASS | Consistent with FR-033, FR-036 |
+| Complete | PASS | Expression, example, and NOT NULL constraint all specified |
+| Singular | WARN | ADD + POPULATE inseparable for NOT NULL. Same pattern as FR-027. Acceptable. |
+| Feasible | PASS | SQL expression correct; validated in ASM-A-002 design phase |
+| Traceable | PASS | SCN-008; NFR-INT-003; OPT-A convergence |
+
+---
+
+## FR-029 — Migration: Add `measurement_type`
+
+**Full Text:** "The migration script shall add a column `measurement_type TEXT NOT NULL` to the
+`sensorreadings` table and populate it for every existing row with `SUBSTRING_INDEX(device, '/',
+-1)` — the final slash-delimited path segment of `device`."
+
+| Attribute | Result | Finding |
+| --------- | ------ | ------- |
+| Necessary | PASS | Traces to NEED-STK-001-008, NEED-STK-001-010, NFR-INT-003 |
+| Unambiguous | PASS | SQL expression and example stated |
+| Verifiable | PASS | I+T (ST): inspect SQL; spot-check SELECT confirms derivation |
+| Consistent | PASS | Consistent with FR-034, FR-037 |
+| Complete | PASS | Expression and example specified |
+| Singular | WARN | ADD + POPULATE inseparable for NOT NULL. Same pattern as FR-027. Acceptable. |
+| Feasible | PASS | Simple SUBSTRING_INDEX; validated in ASM-A-003 design phase |
+| Traceable | PASS | SCN-008; NFR-INT-003; OPT-A convergence |
+
+---
+
+## FR-031 — Migration: Drop Legacy Timestamp Columns
+
+**Full Text:** "The migration script shall drop the `currentdate` and `currenttime` columns from
+`sensorreadings` after all three new columns have been populated and verified."
+
+| Attribute | Result | Finding |
+| --------- | ------ | ------- |
+| Necessary | PASS | Traces to NEED-STK-001-008, NFR-INT-003 |
+| Unambiguous | PASS | Target columns named; sequencing stated |
+| Verifiable | PASS | I+T: DROP COLUMN statements in script after backfill; DESCRIBE confirms absence |
+| Consistent | PASS | Consistent with FR-027–FR-029 |
+| Complete | WARN | **"populated and verified" is vague.** What constitutes verified? An engineer could interpret this as any informal check. Should specify the explicit SQL criterion used to verify before dropping. |
+| Singular | WARN | Dropping two columns is one logical operation (remove the legacy timestamp pair). Acceptable. |
+| Feasible | PASS | Standard DDL |
+| Traceable | PASS | SCN-008; NFR-INT-003 |
+
+**Rewrite Suggestion (to resolve Complete WARN):**
+"The migration script shall drop the `currentdate` and `currenttime` columns from
+`sensorreadings` after all three new columns have been populated **and after executing
+`SELECT COUNT(*) FROM sensorreadings WHERE captured_at IS NULL` and confirming the result
+is zero.**"
+
+---
+
+## FR-032 — Model: `captured_at` Column
+
+**Full Text:** "The `SensorReading` SQLAlchemy model in `mqttlogger/data_model.py` shall declare
+`captured_at` as a `DateTime` column that does not permit null values, and shall not declare
+`currentdate` or `currenttime` columns."
+
+| Attribute | Result | Finding |
+| --------- | ------ | ------- |
+| Necessary | PASS | Traces to NEED-STK-001-008, NFR-INT-003 |
+| Unambiguous | PASS | Column name, type, nullable constraint, and excluded column names all stated |
+| Verifiable | PASS | I: Column(DateTime, nullable=False) present; Date/Time columns absent |
+| Consistent | PASS | Consistent with FR-027 (migration adds column), FR-035 (handler sets it) |
+| Complete | PASS | Positive (declare captured_at) + negative (no currentdate/currenttime) fully specifies the obligation |
+| Singular | WARN | Positive + negative form of same class property. Same pattern as FR-008. Acceptable. |
+| Feasible | PASS | Standard SQLAlchemy column declaration |
+| Traceable | PASS | SCN-008; NFR-INT-003 |
+
+---
+
+## FR-035 — `on_message`: Populate `captured_at`
+
+**Full Text:** "The `on_message` handler in `mqttlogger/mqtt_client.py` shall set `captured_at`
+on each new `SensorReading` to `datetime.now()` at the time the MQTT message is received."
+
+| Attribute | Result | Finding |
+| --------- | ------ | ------- |
+| Necessary | PASS | Traces to NEED-STK-001-001, NEED-STK-001-010 |
+| Unambiguous | WARN | **`datetime.now()` is timezone-naive.** Whether the stored value is UTC, local time, or system-dependent is unspecified. If the host clock drifts or is in a non-UTC timezone, `datetime.now()` produces a timezone-ambiguous value that cannot be reliably compared across systems. Requirement should specify `datetime.now(timezone.utc)` or equivalent to make the semantic explicit. |
+| Verifiable | PASS | T (IT): insert row; verify captured_at within 5 s of publish time |
+| Consistent | PASS | Consistent with FR-027 (migration backfill uses TIMESTAMP() which is also server-local) |
+| Complete | PASS | Trigger and value both specified |
+| Singular | PASS | One field assignment |
+| Feasible | PASS | `datetime.now()` or `datetime.now(timezone.utc)` are both trivial |
+| Traceable | PASS | SCN-008; FR-002 |
+
+**Rewrite Suggestion (to resolve Unambiguous WARN):**
+"The `on_message` handler shall set `captured_at` on each new `SensorReading` to
+`datetime.now(timezone.utc)` at the time the MQTT message is received."
+
+---
+
+## FR-036 — `on_message`: Populate `location`
+
+**Full Text:** "The `on_message` handler shall set `location` on each new `SensorReading` to
+the second and third slash-delimited path segments of the MQTT message topic, joined by a
+forward slash (e.g. topic `environment/indoor/attic/temperature` → `location = 'indoor/attic'`)."
+
+| Attribute | Result | Finding |
+| --------- | ------ | ------- |
+| Necessary | PASS | Traces to NEED-STK-001-010 |
+| Unambiguous | PASS | Algorithm stated; example given |
+| Verifiable | PASS | T (IT): publish on known topic; verify location matches expected value |
+| Consistent | PASS | Consistent with FR-028 (migration uses same derivation) |
+| Complete | WARN | **Behavior for a non-conforming topic (fewer than 4 segments) is not specified.** The requirement assumes all topics follow the 4-level pattern. If a message arrives on a 3-level topic, `SUBSTRING_INDEX(topic, '/', -2)` would silently produce an incorrect value. The requirement does not state whether this should raise an error, log a warning, or is simply assumed impossible. ASM-A-001 pre-validates this assumption, but the code requirement itself is silent on error handling. |
+| Singular | PASS | One field assignment |
+| Feasible | PASS | Python string split or topic.split('/')[2:4] is trivial |
+| Traceable | PASS | SCN-008; OPT-A convergence |
+
+**Note:** The Complete WARN is mitigated by TASK-A-001 (pre-migration topic inventory) and
+ASM-A-001 (assumption validated before production deployment). Once ASM-A-001 is resolved at
+IP-001, the operational risk is negligible. No rewrite required before Phase 2 gate; the WARN
+is recorded for implementation guidance.
+
+---
+
+## FR-040 — Companion Monitor: Read-Only Database Credentials
+
+**Full Text:** "The `companion_monitor` service definition in `docker-compose.yml` shall supply
+database credentials for a MariaDB user that has `SELECT`-only privileges on `sensorreadings`,
+distinct from the write-capable credentials used by the `mqtt_logger` service."
+
+| Attribute | Result | Finding |
+| --------- | ------ | ------- |
+| Necessary | PASS | Traces to NEED-STK-001-008, NEED-STK-001-011, NFR-INT-002, RISK-028 |
+| Unambiguous | PASS | "SELECT-only", "distinct from write-capable" are unambiguous |
+| Verifiable | PASS | I+D: docker-compose.yml reviewed; SHOW GRANTS confirms SELECT-only |
+| Consistent | PASS | Consistent with NFR-INT-002 |
+| Complete | PASS | Credential separation and privilege level both specified |
+| Singular | WARN | "supply credentials for a SELECT-only user" + "distinct from write-capable user" are two facets of one access-control policy. Same pattern as FR-008. Acceptable. |
+| Feasible | PASS | MariaDB read-only user creation is standard |
+| Traceable | PASS | NFR-INT-002; RISK-028; Constitution Principle I |
+
+---
+
+## Coverage Gaps (Feature 009)
+
+None. All 14 feature 009 requirements are covered by at least one stakeholder need.
+NEED-STK-001-008 (consistent schema with audit trail) and NEED-STK-001-010 (temporal and
+device-level resolution) each have ≥6 requirements addressing them. NEED-STK-001-011
+(trustworthy data) is covered by FR-040.
+
+---
+
+## Consistency Issues (Feature 009)
+
+None. The migration requirements (FR-027–FR-031), model requirements (FR-032–FR-034),
+handler requirements (FR-035–FR-037), companion monitor requirements (FR-038–FR-039),
+and infrastructure requirement (FR-040) are mutually consistent. Each new field introduced
+in the migration has a corresponding model declaration, handler assignment, and (where
+applicable) companion monitor update.
+
+---
+
+## Action Summary (Feature 009)
+
+### Must Fix (FAIL items — Phase 2 cannot close until resolved)
+
+None.
+
+### Should Fix Before Phase 3
+
+| REQ-ID | Attribute | Concern | Recommendation |
+| ------ | --------- | ------- | -------------- |
+| FR-031 | Complete | "populated and verified" is vague — no criterion for what constitutes verified | Rewrite to specify: "…after executing `SELECT COUNT(*) FROM sensorreadings WHERE captured_at IS NULL` and confirming the result is zero" |
+| FR-035 | Unambiguous | `datetime.now()` is timezone-naive; semantic (UTC vs. local time) unspecified | Rewrite to use `datetime.now(timezone.utc)` |
+
+### Acceptable WARNs (no action required)
+
+The Singular WARNs on FR-027, FR-028, FR-029, FR-032, FR-040 follow the add+populate / positive+negative
+pattern common across this codebase (see FR-008, FR-011 precedent). The Complete WARN on FR-036 is
+mitigated by the pre-deployment ASM-A-001 topic inventory check. No refactoring required before Phase 2 gate.
